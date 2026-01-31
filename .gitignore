@@ -1,1 +1,47 @@
 masterGuide_WORKING.md
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Dd]ebug*/
+[Rr]elease*/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.sln.iml
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# SQLite local dev DB
+*.sqlite
+*.db
+*.sqlite-wal
+*.sqlite-shm
+
+# Test results / coverage
+TestResults/
+.coverage
+coverage*.xml
+coverage*.json
+
+# Publish output
+publish/
+artifacts/
