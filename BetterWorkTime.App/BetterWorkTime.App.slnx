@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="../BetterWorkTime.Core/BetterWorkTime.Core.csproj" />
+  <Project Path="../BetterWorkTime.Data/BetterWorkTime.Data.csproj" />
+  <Project Path="../BetterWorkTime.Platform.Windows/BetterWorkTime.Platform.Windows.csproj" />
+  <Project Path="../BetterWorkTime.Tests.Core/BetterWorkTime.Tests.Core.csproj" />
+  <Project Path="../BetterWorkTime.Tests.Data/BetterWorkTime.Tests.Data.csproj" />
+  <Project Path="BetterWorkTime.App.csproj" />
+</Solution>

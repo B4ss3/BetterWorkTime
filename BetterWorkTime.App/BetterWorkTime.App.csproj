@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hardcodet.NotifyIcon.Wpf" Version="2.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BetterWorkTime.Core\BetterWorkTime.Core.csproj" />
+    <ProjectReference Include="..\BetterWorkTime.Data\BetterWorkTime.Data.csproj" />
+    <ProjectReference Include="..\BetterWorkTime.Platform.Windows\BetterWorkTime.Platform.Windows.csproj" />
+  </ItemGroup>
+
+</Project>
