@@ -14,6 +14,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect solution file
+        id: sol
+        shell: pwsh
+        run: |
+          $sln = Get-ChildItem -Recurse -Filter *.sln -ErrorAction SilentlyContinue | Select-Object -First 1
+          $slnx = Get-ChildItem -Recurse -Filter *.slnx -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($sln) {
+            "solution=$($sln.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } elseif ($slnx) {
+            "solution=$($slnx.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "solution=" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
       - name: Detect .NET projects
         id: detect
         shell: pwsh
@@ -33,16 +47,21 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore
-        if: steps.detect.outputs.has_dotnet == 'true'
-        run: dotnet restore ./BetterWorkTime.sln
+        if: steps.sol.outputs.solution != ''
+        run: dotnet restore "${{ steps.sol.outputs.solution }}"
 
       - name: Build
-        if: steps.detect.outputs.has_dotnet == 'true'
-        run: dotnet build ./BetterWorkTime.sln --no-restore -c Release
+        if: steps.sol.outputs.solution != ''
+        run: dotnet build "${{ steps.sol.outputs.solution }}" --no-restore -c Release
 
       - name: Test
-        if: steps.detect.outputs.has_dotnet == 'true'
-        run: dotnet test ./BetterWorkTime.sln --no-build -c Release
+        if: steps.sol.outputs.solution != ''
+        run: dotnet test "${{ steps.sol.outputs.solution }}" --no-build -c Release
+
+      - name: Skip (no solution yet)
+        if: steps.sol.outputs.solution == ''
+        run: echo "No .sln/.slnx found — skipping."
+
 
 
       - name: Skip (no .NET solution yet)
