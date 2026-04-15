@@ -37,11 +37,19 @@ public partial class MainWindow : Window
 
         var elapsed = AppRef.GetElapsed();
         ElapsedText.Text = $"Elapsed: {elapsed:hh\\:mm\\:ss}";
+
+        SwitchTaskButton.IsEnabled = running;
     }
 
     private void StartStopButton_Click(object sender, RoutedEventArgs e)
     {
         AppRef.ToggleTracking();
+        RefreshUi();
+    }
+
+    private void SwitchTaskButton_Click(object sender, RoutedEventArgs e)
+    {
+        AppRef.SwitchTask();
         RefreshUi();
     }
 

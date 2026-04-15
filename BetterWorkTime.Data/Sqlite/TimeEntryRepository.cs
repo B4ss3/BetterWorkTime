@@ -17,7 +17,7 @@ public sealed class TimeEntryRepository
         }.ToString();
     }
 
-    public string StartEntry(long startUtc, string source)
+    public string StartEntry(long startUtc, string source, string? projectId = null, string? taskId = null)
     {
         var id = Guid.NewGuid().ToString("N");
 
@@ -30,11 +30,13 @@ INSERT INTO time_entries(
     id, project_id, task_id, start_utc, end_utc, duration_sec, note, source,
     is_idle, idle_adjusted, created_at_utc
 ) VALUES (
-    $id, NULL, NULL, $start, NULL, 0, NULL, $source,
+    $id, $projectId, $taskId, $start, NULL, 0, NULL, $source,
     0, 0, $created
 );
 """;
         cmd.Parameters.AddWithValue("$id", id);
+        cmd.Parameters.AddWithValue("$projectId", (object?)projectId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$taskId", (object?)taskId ?? DBNull.Value);
         cmd.Parameters.AddWithValue("$start", startUtc);
         cmd.Parameters.AddWithValue("$source", source);
         cmd.Parameters.AddWithValue("$created", startUtc);

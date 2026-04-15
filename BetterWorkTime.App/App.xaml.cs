@@ -12,6 +12,7 @@ public partial class App : Application
 {
     private TaskbarIcon? _trayIcon;
     private MenuItem? _trayStartStopItem;
+    private MenuItem? _traySwitchTaskItem;
 
     private string? _dbPath;
     private TimeEntryRepository? _repo;
@@ -147,6 +148,7 @@ public partial class App : Application
         }
 
         UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -174,10 +176,40 @@ public partial class App : Application
         _runtime?.Set("tracking.running_entry_id", "null");
     }
 
+    internal void SwitchTask()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(SwitchTask); return; }
+        if (_repo == null || !_isTracking) return;
+
+        var dlg = new SwitchTaskDialog(
+            new ProjectRepository(_dbPath!),
+            new TaskRepository(_dbPath!));
+
+        if (dlg.ShowDialog() != true) return;
+
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        StopRunningAt(now);
+
+        _runningEntryId = _repo.StartEntry(now, "manual", dlg.SelectedProjectId, dlg.SelectedTaskId);
+        _runningStartUtc = now;
+        _isTracking = true;
+
+        PersistRunningState();
+        UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
+        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     private void UpdateTrayStartStopHeader()
     {
         if (_trayStartStopItem != null)
             _trayStartStopItem.Header = _isTracking ? "Stop" : "Start";
+    }
+
+    private void UpdateTraySwitchTaskEnabled()
+    {
+        if (_traySwitchTaskItem != null)
+            _traySwitchTaskItem.IsEnabled = _isTracking;
     }
 
     private ContextMenu BuildTrayMenu()
@@ -187,8 +219,8 @@ public partial class App : Application
         _trayStartStopItem = new MenuItem { Header = _isTracking ? "Stop" : "Start" };
         _trayStartStopItem.Click += (_, __) => ToggleTracking();
 
-        var switchTask = new MenuItem { Header = "Switch Task..." };
-        switchTask.Click += (_, __) => MessageBox.Show("Switch Task... (placeholder)", "BetterWorkTime");
+        _traySwitchTaskItem = new MenuItem { Header = "Switch Task...", IsEnabled = _isTracking };
+        _traySwitchTaskItem.Click += (_, __) => SwitchTask();
 
         var addNote = new MenuItem { Header = "Add Note..." };
         addNote.Click += (_, __) => MessageBox.Show("Add Note... (placeholder)", "BetterWorkTime");
@@ -200,7 +232,7 @@ public partial class App : Application
         quit.Click += (_, __) => QuitApp();
 
         menu.Items.Add(_trayStartStopItem);
-        menu.Items.Add(switchTask);
+        menu.Items.Add(_traySwitchTaskItem);
         menu.Items.Add(addNote);
         menu.Items.Add(new Separator());
         menu.Items.Add(open);

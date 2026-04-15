@@ -18,6 +18,13 @@
             Width="160"
             Height="38"
             Click="StartStopButton_Click" />
+
+            <Button x:Name="SwitchTaskButton"
+            Content="Switch Task..."
+            Margin="0,8,0,0"
+            Width="160"
+            Height="32"
+            Click="SwitchTaskButton_Click" />
         </StackPanel>
 
     </Grid>
