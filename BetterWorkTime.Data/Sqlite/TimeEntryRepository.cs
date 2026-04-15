@@ -103,4 +103,47 @@ SELECT
         return result == null ? null : Convert.ToInt64(result);
     }
 
+    public (string? ProjectId, string? TaskId, string? Note) GetEntryMeta(string entryId)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT project_id, task_id, note FROM time_entries WHERE id = $id LIMIT 1;";
+        cmd.Parameters.AddWithValue("$id", entryId);
+
+        using var r = cmd.ExecuteReader();
+        if (!r.Read()) return (null, null, null);
+
+        return (
+            r.IsDBNull(0) ? null : r.GetString(0),
+            r.IsDBNull(1) ? null : r.GetString(1),
+            r.IsDBNull(2) ? null : r.GetString(2));
+    }
+
+    public void UpdateNote(string entryId, string? note)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE time_entries SET note = $note WHERE id = $id;";
+        cmd.Parameters.AddWithValue("$note", (object?)note ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$id", entryId);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void UpdateProjectTask(string entryId, string? projectId, string? taskId)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE time_entries SET project_id = $pid, task_id = $tid WHERE id = $id;";
+        cmd.Parameters.AddWithValue("$pid", (object?)projectId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$tid", (object?)taskId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$id", entryId);
+        cmd.ExecuteNonQuery();
+    }
+
 }

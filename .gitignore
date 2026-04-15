@@ -46,3 +46,4 @@ coverage*.json
 # Publish output
 publish/
 artifacts/
+.claude/settings.local.json

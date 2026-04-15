@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -17,15 +18,23 @@ public partial class App : Application
     private string? _dbPath;
     private TimeEntryRepository? _repo;
     private RuntimeStateRepository? _runtime;
+    private TagRepository? _tagRepo;
 
     private bool _isTracking;
     private string? _runningEntryId;
     private long? _runningStartUtc;
+    private string? _runningProjectId;
+    private string? _runningTaskName;
+    private string? _runningNote;
 
     internal static bool IsQuitting { get; private set; }
+    internal string DbPath => _dbPath!;
 
     public event EventHandler? TrackingStateChanged;
     public bool IsTracking => _isTracking;
+    public string? RunningProjectId => _runningProjectId;
+    public string? RunningTaskName  => _runningTaskName;
+    public string? RunningNote      => _runningNote;
 
     public TimeSpan GetElapsed()
     {
@@ -39,10 +48,8 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // Tray-first: app must stay alive even with no window open
         ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-        // --- DB init ---
         var baseDir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BetterWorkTime");
@@ -53,11 +60,10 @@ public partial class App : Application
         _dbPath = dbPath;
         _repo = new TimeEntryRepository(dbPath);
         _runtime = new RuntimeStateRepository(dbPath);
+        _tagRepo = new TagRepository(dbPath);
 
-        // --- Restore runtime state BEFORE creating tray menu ---
         RestoreRuntimeState();
 
-        // --- Recovery prompt (M1.5) ---
         if (_isTracking && !string.IsNullOrWhiteSpace(_runningEntryId))
         {
             var result = MessageBox.Show(
@@ -68,16 +74,11 @@ public partial class App : Application
                 MessageBoxImage.Question);
 
             if (result == MessageBoxResult.No)
-            {
                 StopRunningAt(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            }
             else
-            {
                 PersistRunningState();
-            }
         }
 
-        // --- Tray icon/menu AFTER restore + recovery ---
         _trayIcon = new TaskbarIcon
         {
             ToolTipText = "BetterWorkTime",
@@ -120,13 +121,24 @@ public partial class App : Application
         _runningStartUtc = (_isTracking && _runningEntryId != null)
             ? _repo.GetStartUtc(_runningEntryId)
             : null;
+
+        if (_isTracking && _runningEntryId != null)
+        {
+            var meta = _repo.GetEntryMeta(_runningEntryId);
+            _runningProjectId = meta.ProjectId;
+            _runningTaskName  = meta.TaskId != null
+                ? new TaskRepository(_dbPath!).GetName(meta.TaskId)
+                : null;
+            _runningNote = meta.Note;
+        }
     }
 
-    internal void ToggleTracking()
+    internal void ToggleTracking(string? projectId = null, string? taskName = null,
+        IReadOnlyList<string>? tagIds = null, string? note = null)
     {
         if (!Dispatcher.CheckAccess())
         {
-            Dispatcher.Invoke(ToggleTracking);
+            Dispatcher.Invoke(() => ToggleTracking(projectId, taskName, tagIds, note));
             return;
         }
 
@@ -136,9 +148,20 @@ public partial class App : Application
 
         if (!_isTracking)
         {
-            _runningEntryId = _repo.StartEntry(now, "manual");
+            var taskId = ResolveTaskId(projectId, taskName);
+
+            _runningEntryId  = _repo.StartEntry(now, "manual", projectId, taskId);
             _runningStartUtc = now;
-            _isTracking = true;
+            _runningProjectId = projectId;
+            _runningTaskName  = taskName;
+            _runningNote      = note;
+            _isTracking       = true;
+
+            if (!string.IsNullOrWhiteSpace(note))
+                _repo.UpdateNote(_runningEntryId, note);
+
+            if (tagIds != null && tagIds.Count > 0)
+                _tagRepo?.SetForEntry(_runningEntryId, tagIds);
 
             PersistRunningState();
         }
@@ -152,6 +175,71 @@ public partial class App : Application
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    internal void SwitchTask()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(SwitchTask); return; }
+        if (_repo == null || !_isTracking) return;
+
+        var dlg = new SwitchTaskDialog(new ProjectRepository(_dbPath!), _runningProjectId, _runningTaskName);
+        if (dlg.ShowDialog() != true) return;
+
+        ApplySwitch(dlg.SelectedProjectId, dlg.SelectedTaskName, null, null);
+    }
+
+    internal void SwitchTaskWithContext(string? projectId, string? taskName,
+        IReadOnlyList<string>? tagIds, string? note)
+    {
+        if (!Dispatcher.CheckAccess())
+        {
+            Dispatcher.Invoke(() => SwitchTaskWithContext(projectId, taskName, tagIds, note));
+            return;
+        }
+
+        if (_repo == null || !_isTracking) return;
+
+        ApplySwitch(projectId, taskName, tagIds, note);
+    }
+
+    private void ApplySwitch(string? projectId, string? taskName,
+        IReadOnlyList<string>? tagIds, string? note)
+    {
+        var now    = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var taskId = ResolveTaskId(projectId, taskName);
+
+        StopRunningAt(now);
+
+        _runningEntryId  = _repo!.StartEntry(now, "manual", projectId, taskId);
+        _runningStartUtc = now;
+        _runningProjectId = projectId;
+        _runningTaskName  = taskName;
+        _runningNote     = note;
+        _isTracking      = true;
+
+        if (!string.IsNullOrWhiteSpace(note))
+            _repo.UpdateNote(_runningEntryId, note);
+
+        if (tagIds != null && tagIds.Count > 0)
+            _tagRepo?.SetForEntry(_runningEntryId, tagIds);
+
+        PersistRunningState();
+        UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
+        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private string? ResolveTaskId(string? projectId, string? taskName)
+    {
+        if (projectId == null || string.IsNullOrWhiteSpace(taskName)) return null;
+        return new TaskRepository(_dbPath!).FindOrCreate(taskName.Trim(), projectId);
+    }
+
+    internal void UpdateRunningNote(string? note)
+    {
+        if (_repo == null || _runningEntryId == null) return;
+        _runningNote = note;
+        _repo.UpdateNote(_runningEntryId, note);
+    }
+
     private void StopRunningAt(long nowUtc)
     {
         if (_repo != null && _runningEntryId != null)
@@ -159,6 +247,9 @@ public partial class App : Application
 
         _runningEntryId = null;
         _runningStartUtc = null;
+        _runningProjectId = null;
+        _runningTaskName  = null;
+        _runningNote      = null;
         _isTracking = false;
 
         PersistStoppedState();
@@ -174,30 +265,6 @@ public partial class App : Application
     {
         _runtime?.Set("tracking.is_running", "false");
         _runtime?.Set("tracking.running_entry_id", "null");
-    }
-
-    internal void SwitchTask()
-    {
-        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(SwitchTask); return; }
-        if (_repo == null || !_isTracking) return;
-
-        var dlg = new SwitchTaskDialog(
-            new ProjectRepository(_dbPath!),
-            new TaskRepository(_dbPath!));
-
-        if (dlg.ShowDialog() != true) return;
-
-        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        StopRunningAt(now);
-
-        _runningEntryId = _repo.StartEntry(now, "manual", dlg.SelectedProjectId, dlg.SelectedTaskId);
-        _runningStartUtc = now;
-        _isTracking = true;
-
-        PersistRunningState();
-        UpdateTrayStartStopHeader();
-        UpdateTraySwitchTaskEnabled();
-        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void UpdateTrayStartStopHeader()
@@ -223,7 +290,7 @@ public partial class App : Application
         _traySwitchTaskItem.Click += (_, __) => SwitchTask();
 
         var addNote = new MenuItem { Header = "Add Note..." };
-        addNote.Click += (_, __) => MessageBox.Show("Add Note... (placeholder)", "BetterWorkTime");
+        addNote.Click += (_, __) => OpenAddNoteDialog();
 
         var open = new MenuItem { Header = "Open BetterWorkTime" };
         open.Click += (_, __) => Dispatcher.Invoke(ShowMainWindow);
@@ -239,6 +306,20 @@ public partial class App : Application
         menu.Items.Add(quit);
 
         return menu;
+    }
+
+    private void OpenAddNoteDialog()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenAddNoteDialog); return; }
+        if (!_isTracking)
+        {
+            MessageBox.Show("Start tracking first to add a note.", "BetterWorkTime");
+            return;
+        }
+
+        var dlg = new AddNoteDialog(_runningNote);
+        if (dlg.ShowDialog() == true)
+            UpdateRunningNote(dlg.Note);
     }
 
     private void ToggleMainWindow()
@@ -262,23 +343,17 @@ public partial class App : Application
 
         MainWindow.ShowInTaskbar = true;
         MainWindow.WindowState = WindowState.Normal;
-
         MainWindow.Show();
         MainWindow.Activate();
-
-        // bring-to-front trick
         MainWindow.Topmost = true;
         MainWindow.Topmost = false;
-
         MainWindow.Focus();
     }
 
     private void QuitApp()
     {
         IsQuitting = true;
-
         try { MainWindow?.Close(); } catch { /* ignore */ }
-
         _trayIcon?.Dispose();
         Shutdown();
     }
