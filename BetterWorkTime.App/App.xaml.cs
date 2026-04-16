@@ -18,6 +18,7 @@ public partial class App : Application
     private TaskbarIcon? _trayIcon;
     private MenuItem? _trayStartStopItem;
     private MenuItem? _traySwitchTaskItem;
+    private MenuItem? _trayRecentItem;
 
     private string? _dbPath;
     private TimeEntryRepository? _repo;
@@ -465,6 +466,7 @@ public partial class App : Application
         UpdateTrayStartStopHeader();
         UpdateTraySwitchTaskEnabled();
         UpdateTrayTooltip();
+        RebuildRecentSubmenu();
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -517,6 +519,8 @@ public partial class App : Application
         PersistRunningState();
         UpdateTrayStartStopHeader();
         UpdateTraySwitchTaskEnabled();
+        UpdateTrayTooltip();
+        RebuildRecentSubmenu();
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -624,6 +628,9 @@ public partial class App : Application
         _traySwitchTaskItem = new MenuItem { Header = "Switch Task...", IsEnabled = _isTracking };
         _traySwitchTaskItem.Click += (_, __) => SwitchTask();
 
+        _trayRecentItem = new MenuItem { Header = "Start Recent" };
+        RebuildRecentSubmenu();
+
         var addNote = new MenuItem { Header = "Add Note..." };
         addNote.Click += (_, __) => OpenAddNoteDialog();
 
@@ -641,6 +648,7 @@ public partial class App : Application
 
         menu.Items.Add(_trayStartStopItem);
         menu.Items.Add(_traySwitchTaskItem);
+        menu.Items.Add(_trayRecentItem);
         menu.Items.Add(addNote);
         menu.Items.Add(new Separator());
         menu.Items.Add(open);
@@ -649,6 +657,46 @@ public partial class App : Application
         menu.Items.Add(quit);
 
         return menu;
+    }
+
+    private void RebuildRecentSubmenu()
+    {
+        if (_trayRecentItem == null) return;
+
+        _trayRecentItem.Items.Clear();
+
+        var combos = new TimeEntryRepository(_dbPath!).GetRecentCombos(5);
+
+        if (combos.Count == 0)
+        {
+            _trayRecentItem.IsEnabled = false;
+            return;
+        }
+
+        _trayRecentItem.IsEnabled = true;
+
+        foreach (var combo in combos)
+        {
+            var projectLabel = combo.ProjectName ?? "(Unassigned)";
+            var taskLabel    = combo.TaskName;
+            var header       = taskLabel != null ? $"{projectLabel} / {taskLabel}" : projectLabel;
+
+            var item = new MenuItem { Header = header };
+
+            // Capture for lambda
+            var projectId = combo.ProjectId;
+            var taskName  = combo.TaskName;
+
+            item.Click += (_, __) =>
+            {
+                if (_isTracking)
+                    ApplySwitch(projectId, taskName, null, null);
+                else
+                    ToggleTracking(projectId, taskName);
+            };
+
+            _trayRecentItem.Items.Add(item);
+        }
     }
 
     private void OpenAddNoteDialog()

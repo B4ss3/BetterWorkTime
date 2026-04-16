@@ -219,6 +219,38 @@ ORDER BY te.start_utc ASC;
         return rows;
     }
 
+    public IReadOnlyList<RecentComboRow> GetRecentCombos(int limit = 5)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+SELECT te.project_id, p.name, te.task_id, t.name
+FROM time_entries te
+LEFT JOIN projects p ON te.project_id = p.id
+LEFT JOIN tasks    t ON te.task_id    = t.id
+WHERE te.is_idle = 0
+  AND te.end_utc IS NOT NULL
+GROUP BY te.project_id, te.task_id
+ORDER BY MAX(te.start_utc) DESC
+LIMIT $limit;
+""";
+        cmd.Parameters.AddWithValue("$limit", limit);
+
+        var rows = new List<RecentComboRow>();
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            rows.Add(new RecentComboRow(
+                ProjectId:   r.IsDBNull(0) ? null : r.GetString(0),
+                ProjectName: r.IsDBNull(1) ? null : r.GetString(1),
+                TaskId:      r.IsDBNull(2) ? null : r.GetString(2),
+                TaskName:    r.IsDBNull(3) ? null : r.GetString(3)));
+        }
+        return rows;
+    }
+
     public void DeleteEntry(string entryId)
     {
         using var conn = new SqliteConnection(_connectionString);
