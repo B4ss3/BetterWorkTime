@@ -1,0 +1,35 @@
+<Window x:Class="BetterWorkTime.App.RecoveryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Recover tracking session"
+        Width="400" SizeToContent="Height"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        Topmost="True">
+
+    <StackPanel Margin="20">
+
+        <TextBlock Text="BetterWorkTime was tracking when the app last closed."
+                   FontSize="14" FontWeight="SemiBold"
+                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+        <TextBlock x:Name="LastSeenText"
+                   FontSize="13" Foreground="Gray"
+                   TextWrapping="Wrap" Margin="0,0,0,20"/>
+
+        <Button Content="Resume — keep tracking from now"
+                Height="34" Margin="0,0,0,6"
+                Click="Resume_Click"/>
+
+        <Button x:Name="StopAtLastSeenButton"
+                Height="34" Margin="0,0,0,6"
+                Click="StopAtLastSeen_Click"/>
+
+        <Button Content="Stop now — finalize entry at current time"
+                Height="34"
+                Click="StopNow_Click"/>
+
+    </StackPanel>
+
+</Window>

@@ -89,22 +89,26 @@ public partial class App : Application
 
         if (_isTracking && !string.IsNullOrWhiteSpace(_runningEntryId))
         {
-            var result = MessageBox.Show(
-                "BetterWorkTime detected tracking was running when the app last closed.\n\n" +
-                "Yes = Resume\nNo = Stop now (finalize the entry).",
-                "Recover tracking session",
-                MessageBoxButton.YesNo,
-                MessageBoxImage.Question);
+            var lastSeenStr = _runtime?.Get("tracking.last_seen_utc");
+            long? lastSeenUtc = long.TryParse(lastSeenStr, out var ls) && ls > 0 ? ls : null;
 
-            if (result == MessageBoxResult.No)
+            var dlg = new RecoveryDialog(lastSeenUtc);
+            dlg.ShowDialog();
+
+            switch (dlg.Choice)
             {
-                AppLogger.Log("Recovery: user chose Stop");
-                StopRunningAt(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            }
-            else
-            {
-                AppLogger.Log("Recovery: user chose Resume");
-                PersistRunningState();
+                case RecoveryChoice.StopAtLastSeen:
+                    AppLogger.Log($"Recovery: stop at last seen ({lastSeenUtc})");
+                    StopRunningAt(lastSeenUtc!.Value);
+                    break;
+                case RecoveryChoice.StopNow:
+                    AppLogger.Log("Recovery: stop now");
+                    StopRunningAt(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+                    break;
+                default:
+                    AppLogger.Log("Recovery: resume");
+                    PersistRunningState();
+                    break;
             }
         }
 
