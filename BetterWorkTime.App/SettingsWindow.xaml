@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
-        Width="420" SizeToContent="Height"
+        Width="440" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False">
@@ -18,6 +18,47 @@
         </StackPanel>
 
         <TabControl>
+
+            <!-- ── General ───────────────────────────────────────── -->
+            <TabItem Header="General">
+                <StackPanel Margin="12">
+
+                    <CheckBox x:Name="StartMinimizedBox"
+                              Content="Start minimized to tray"
+                              FontSize="13" Margin="0,0,0,14"/>
+
+                    <Separator Margin="0,0,0,14"/>
+
+                    <TextBlock Text="Global hotkeys (Ctrl+Alt+…)"
+                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <CheckBox x:Name="HotkeysEnabledBox"
+                              Content="Enable global hotkeys"
+                              FontSize="13" Margin="0,0,0,8"/>
+                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
+                        <Run Text="S"/>
+                        <Run Text=" — Start / Stop"/>
+                    </TextBlock>
+                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
+                        <Run Text="T"/>
+                        <Run Text=" — Switch Task"/>
+                    </TextBlock>
+                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
+                        <Run Text="O"/>
+                        <Run Text=" — Open main window"/>
+                    </TextBlock>
+                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
+                        <Run Text="N"/>
+                        <Run Text=" — Add Note"/>
+                    </TextBlock>
+
+                    <Separator Margin="0,14,0,14"/>
+
+                    <Button Content="Open data folder"
+                            HorizontalAlignment="Left" Padding="10,5"
+                            Click="OpenDataFolder_Click"/>
+
+                </StackPanel>
+            </TabItem>
 
             <!-- ── Tracking ─────────────────────────────────────── -->
             <TabItem Header="Tracking">
@@ -79,6 +120,48 @@
                         <TextBlock Text="Respect Focus Assist (delay reminder while active)"
                                    TextWrapping="Wrap"/>
                     </CheckBox>
+
+                </StackPanel>
+            </TabItem>
+
+            <!-- ── Export ────────────────────────────────────────── -->
+            <TabItem Header="Export">
+                <StackPanel Margin="12">
+
+                    <CheckBox x:Name="OpenFolderAfterExportBox"
+                              Content="Open folder after export"
+                              FontSize="13" Margin="0,0,0,14"/>
+
+                    <TextBlock Text="Last export folder" FontSize="13" Margin="0,0,0,6"/>
+                    <DockPanel Margin="0,0,0,4">
+                        <Button Content="Clear" DockPanel.Dock="Right"
+                                Padding="8,4" Margin="8,0,0,0"
+                                Click="ClearExportFolder_Click"/>
+                        <TextBlock x:Name="LastExportFolderText"
+                                   FontSize="12" Foreground="Gray"
+                                   VerticalAlignment="Center"
+                                   TextTrimming="CharacterEllipsis"/>
+                    </DockPanel>
+
+                </StackPanel>
+            </TabItem>
+
+            <!-- ── About ─────────────────────────────────────────── -->
+            <TabItem Header="About">
+                <StackPanel Margin="12">
+
+                    <TextBlock Text="BetterWorkTime" FontSize="16" FontWeight="SemiBold"
+                               Margin="0,0,0,4"/>
+                    <TextBlock x:Name="VersionText" FontSize="13" Foreground="Gray"
+                               Margin="0,0,0,16"/>
+
+                    <Button Content="Open logs folder"
+                            HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,8"
+                            Click="OpenLogsFolder_Click"/>
+
+                    <Button Content="Open data folder"
+                            HorizontalAlignment="Left" Padding="10,5"
+                            Click="OpenDataFolder_Click"/>
 
                 </StackPanel>
             </TabItem>

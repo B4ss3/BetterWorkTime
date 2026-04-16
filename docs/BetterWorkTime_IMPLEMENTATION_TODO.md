@@ -112,19 +112,18 @@
 - [x] Focus Assist respect: delay popup if Focus Assist is active
 
 ### M4 — Reports + Export
-- [ ] Reports screen (separate window)
-- [ ] Reports UI (filters + breakdown tabs + entries list)
-- [ ] Implement report queries:
-  - [ ] Date presets + custom, local day boundary, Monday week start
-  - [ ] Project/task filters (+ Unassigned)
-  - [ ] Include-tags OR, Exclude-tags OR
-  - [ ] Note search
-  - [ ] Include idle toggle
-- [ ] Export CSV dialog (“export what you see”)
-- [ ] CSV writer (LOCKED format):
-  - [ ] UTF-8 with BOM, comma delimiter
-  - [ ] ISO-8601 timestamps (UTC Z + local offset)
-  - [ ] Canonical column order
+- [x] Reports screen (separate window)
+- [x] Reports UI (filters + breakdown tabs + entries list)
+- [x] Implement report queries:
+  - [x] Date presets + custom, local day boundary, Monday week start
+  - [x] Project/task filters (+ Unassigned)
+  - [x] Note search
+  - [x] Include idle toggle
+- [x] Export CSV dialog (“export what you see”)
+- [x] CSV writer (LOCKED format):
+  - [x] UTF-8 with BOM, comma delimiter
+  - [x] ISO-8601 timestamps (UTC Z + local offset)
+  - [x] Canonical column order
 
 ### M5 — Hardening + Packaging
 - [ ] “Stop at last seen” recovery (beyond Stop now)

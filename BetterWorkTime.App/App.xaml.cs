@@ -9,6 +9,7 @@ using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using BetterWorkTime.Data.Sqlite;
 using BetterWorkTime.Platform.Windows;
+using Microsoft.Win32;
 
 namespace BetterWorkTime.App;
 
@@ -36,9 +37,16 @@ public partial class App : Application
     private long? _idleStartUtc;
 
     // Hydration
-    private long _hydrationAccSec;     // accumulated tracking seconds since last reminder
+    private long _hydrationAccSec;
     private long _hydrationLastTickUtc;
     private bool _hydrationPromptShowing;
+
+    // Snapshot + sleep/wake
+    private readonly DispatcherTimer _snapshotTick = new() { Interval = TimeSpan.FromSeconds(5) };
+    private long _lastSnapshotUtc;
+
+    // Global hotkeys
+    private GlobalHotkeyManager? _hotkeys;
 
     internal static bool IsQuitting { get; private set; }
     internal string DbPath => _dbPath!;
@@ -67,6 +75,8 @@ public partial class App : Application
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "BetterWorkTime");
 
+        AppLogger.Initialize(Path.Combine(baseDir, "Logs"));
+
         var dbPath = Path.Combine(baseDir, "betterworktime.sqlite");
         DbInitializer.EnsureCreated(dbPath);
 
@@ -87,9 +97,15 @@ public partial class App : Application
                 MessageBoxImage.Question);
 
             if (result == MessageBoxResult.No)
+            {
+                AppLogger.Log("Recovery: user chose Stop");
                 StopRunningAt(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            }
             else
+            {
+                AppLogger.Log("Recovery: user chose Resume");
                 PersistRunningState();
+            }
         }
 
         _trayIcon = new TaskbarIcon
@@ -103,11 +119,26 @@ public partial class App : Application
 
         _idleTick.Tick += OnIdleTick;
         _idleTick.Start();
+
+        _snapshotTick.Tick += OnSnapshotTick;
+        _snapshotTick.Start();
+
+        SystemEvents.PowerModeChanged += OnPowerModeChanged;
+
+        ApplyHotkeySettings();
+
+        var settings = new SettingsRepository(_dbPath!);
+        if (!settings.GetBool(SettingsWindow.KeyStartMinimized, true))
+            ShowMainWindow();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        AppLogger.Log("App exiting");
         _idleTick.Stop();
+        _snapshotTick.Stop();
+        SystemEvents.PowerModeChanged -= OnPowerModeChanged;
+        _hotkeys?.Dispose();
         _trayIcon?.Dispose();
         base.OnExit(e);
     }
@@ -238,6 +269,75 @@ public partial class App : Application
         _hydrationPromptShowing = false;
     }
 
+    // ── Snapshot + sleep/wake ────────────────────────────────────────────
+
+    private void OnSnapshotTick(object? sender, EventArgs e)
+    {
+        if (!_isTracking) return;
+        _lastSnapshotUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        _runtime?.Set("tracking.last_seen_utc", _lastSnapshotUtc.ToString());
+        PersistRunningState();
+    }
+
+    private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+    {
+        if (e.Mode != PowerModes.Resume) return;
+
+        AppLogger.Log("System resumed from sleep");
+
+        if (!_isTracking || _idlePromptShowing) return;
+
+        // Read last snapshot timestamp from DB
+        var lastSeenStr = _runtime?.Get("tracking.last_seen_utc");
+        if (!long.TryParse(lastSeenStr, out var lastSeen) || lastSeen == 0) return;
+
+        var now     = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var gapSec  = now - lastSeen;
+        var threshold = IdleThresholdSeconds;
+
+        if (gapSec < threshold) return;
+
+        AppLogger.Log($"Sleep gap detected: {gapSec}s — showing idle prompt");
+
+        // Clamp idle start to entry start
+        var idleStart = Math.Max(lastSeen, _runningStartUtc ?? lastSeen);
+        if (idleStart <= (_runningStartUtc ?? 0)) return;
+
+        _idleStartUtc     = idleStart;
+        _idlePromptShowing = true;
+
+        Dispatcher.Invoke(() =>
+        {
+            var prompt = new IdlePromptWindow(TimeSpan.FromSeconds(gapSec));
+            prompt.Closed += (s, _) => ApplyIdleDecision(((IdlePromptWindow)s!).Choice);
+            prompt.Show();
+        });
+    }
+
+    // ── Global hotkeys ───────────────────────────────────────────────────
+
+    internal void ApplyHotkeySettings()
+    {
+        var enabled = new SettingsRepository(_dbPath!).GetBool(SettingsWindow.KeyHotkeysEnabled, false);
+
+        if (enabled && _hotkeys == null)
+        {
+            _hotkeys = new GlobalHotkeyManager();
+            _hotkeys.StartStopPressed  += () => Dispatcher.Invoke(() => ToggleTracking());
+            _hotkeys.SwitchTaskPressed += () => Dispatcher.Invoke(SwitchTask);
+            _hotkeys.OpenMainPressed   += () => Dispatcher.Invoke(ShowMainWindow);
+            _hotkeys.AddNotePressed    += () => Dispatcher.Invoke(OpenAddNoteDialog);
+            _hotkeys.Register();
+            AppLogger.Log("Global hotkeys registered");
+        }
+        else if (!enabled && _hotkeys != null)
+        {
+            _hotkeys.Dispose();
+            _hotkeys = null;
+            AppLogger.Log("Global hotkeys unregistered");
+        }
+    }
+
     // ── Settings ──────────────────────────────────────────────────────────
 
     internal void OpenSettings()
@@ -321,6 +421,7 @@ public partial class App : Application
             _runningTaskName  = taskName;
             _runningNote      = note;
             _isTracking       = true;
+            AppLogger.Log($"Tracking started: project={projectId ?? "none"} task={taskName ?? "none"}");
 
             if (!string.IsNullOrWhiteSpace(note))
                 _repo.UpdateNote(_runningEntryId, note);
@@ -417,6 +518,7 @@ public partial class App : Application
         _runningNote      = null;
         _isTracking       = false;
 
+        AppLogger.Log("Tracking stopped");
         PersistStoppedState();
     }
 

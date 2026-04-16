@@ -222,8 +222,21 @@ public partial class ReportsWindow : Window
         try
         {
             CsvExporter.Write(dlg.FileName, _currentRows);
-            MessageBox.Show($"Exported {_currentRows.Count} entries to:\n{dlg.FileName}",
-                "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+
+            var settings = new SettingsRepository(_dbPath);
+            settings.SetString(SettingsWindow.KeyLastExportFolder,
+                System.IO.Path.GetDirectoryName(dlg.FileName));
+
+            if (settings.GetBool(SettingsWindow.KeyOpenFolderAfterExport, false))
+            {
+                var dir = System.IO.Path.GetDirectoryName(dlg.FileName);
+                if (dir != null) System.Diagnostics.Process.Start("explorer.exe", dir);
+            }
+            else
+            {
+                MessageBox.Show($"Exported {_currentRows.Count} entries to:\n{dlg.FileName}",
+                    "Export CSV", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
         }
         catch (Exception ex)
         {
