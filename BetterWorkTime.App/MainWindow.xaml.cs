@@ -13,6 +13,21 @@ public partial class MainWindow : Window
 {
     private sealed record ProjectItem(string? Id, string Name);
 
+    private sealed class TimelineEntryVm
+    {
+        public string  Id                  { get; init; } = "";
+        public long    StartUtc            { get; init; }
+        public long?   EndUtc              { get; init; }
+        public string  TimeRange           { get; init; } = "";
+        public string  Duration            { get; init; } = "";
+        public string  Label               { get; init; } = "";
+        public string? Note                { get; init; }
+        public bool    IsIdle              { get; init; }
+        public bool    CanSplit            { get; init; }
+        public Visibility NoteVisibility   => string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility IdleBadgeVisibility => IsIdle ? Visibility.Visible : Visibility.Collapsed;
+    }
+
     private const string DefaultTaskText = "Working hard...";
 
     private readonly DispatcherTimer _uiTimer = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -28,19 +43,24 @@ public partial class MainWindow : Window
         {
             AppRef.TrackingStateChanged += OnTrackingStateChanged;
 
-            _uiTimer.Tick += (_, _) => RefreshElapsed();
+            _uiTimer.Tick += (_, _) => { RefreshElapsed(); RefreshTimeline(); };
             _uiTimer.Start();
 
             LoadProjectCombo();
             LoadTagsPanel();
             SetDefaultTaskText();
             RefreshUi();
+            RefreshTimeline();
         };
     }
 
     // ── Event handlers ───────────────────────────────────────────────────
 
-    private void OnTrackingStateChanged(object? sender, EventArgs e) => RefreshUi();
+    private void OnTrackingStateChanged(object? sender, EventArgs e)
+    {
+        RefreshUi();
+        RefreshTimeline();
+    }
 
     private void ProjectCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -85,12 +105,14 @@ public partial class MainWindow : Window
         }
 
         RefreshUi();
+        RefreshTimeline();
     }
 
     private void SwitchTaskButton_Click(object sender, RoutedEventArgs e)
     {
         AppRef.SwitchTask();
         RefreshUi();
+        RefreshTimeline();
     }
 
     private void NoteBox_LostFocus(object sender, RoutedEventArgs e)
@@ -108,6 +130,136 @@ public partial class MainWindow : Window
 
         LoadProjectCombo();
         LoadTagsPanel();
+    }
+
+    // ── Timeline action handlers ──────────────────────────────────────────
+
+    private void EditEntry_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is not string id) return;
+
+        var todayEntries = LoadTodayEntries();
+        var entry = todayEntries.FirstOrDefault(x => x.Id == id);
+        if (entry == null) return;
+
+        var dlg = new EditEntryDialog(AppRef.DbPath, entry, todayEntries) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        var taskId = dlg.ResultProjectId != null && dlg.ResultTaskName != null
+            ? new TaskRepository(AppRef.DbPath).FindOrCreate(dlg.ResultTaskName, dlg.ResultProjectId)
+            : null;
+
+        new TimeEntryRepository(AppRef.DbPath).UpdateEntryFull(
+            id, dlg.ResultStartUtc, dlg.ResultEndUtc,
+            dlg.ResultProjectId, taskId, dlg.ResultNote);
+
+        RefreshTimeline();
+    }
+
+    private void SplitEntry_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is not string id) return;
+
+        var todayEntries = LoadTodayEntries();
+        var entry = todayEntries.FirstOrDefault(x => x.Id == id);
+        if (entry == null || !entry.EndUtc.HasValue) return;
+
+        var dlg = new SplitEntryDialog(entry) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        new TimeEntryRepository(AppRef.DbPath).SplitEntry(id, dlg.ResultSplitUtc, "manual");
+        RefreshTimeline();
+    }
+
+    private void DeleteEntry_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.Tag is not string id) return;
+
+        var result = MessageBox.Show(
+            "Delete this time entry? This cannot be undone.",
+            "Delete Entry", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+        if (result != MessageBoxResult.Yes) return;
+
+        new TimeEntryRepository(AppRef.DbPath).DeleteEntry(id);
+        RefreshTimeline();
+    }
+
+    // ── Timeline refresh ─────────────────────────────────────────────────
+
+    private void RefreshTimeline()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(RefreshTimeline); return; }
+
+        var entries = LoadTodayEntries();
+        var vms     = new List<TimelineEntryVm>(entries.Count);
+
+        long workSec = 0;
+        long idleSec = 0;
+
+        foreach (var entry in entries)
+        {
+            var localStart = DateTimeOffset.FromUnixTimeSeconds(entry.StartUtc).LocalDateTime;
+            string endStr;
+            long dur;
+
+            if (entry.EndUtc.HasValue)
+            {
+                var localEnd = DateTimeOffset.FromUnixTimeSeconds(entry.EndUtc.Value).LocalDateTime;
+                endStr = localEnd.ToString("HH:mm");
+                dur    = entry.DurationSec;
+            }
+            else
+            {
+                endStr = "…";
+                dur    = Math.Max(0, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - entry.StartUtc);
+            }
+
+            if (entry.IsIdle) idleSec += dur; else workSec += dur;
+
+            var label = entry.ProjectName != null
+                ? (entry.TaskName != null ? $"{entry.ProjectName} / {entry.TaskName}" : entry.ProjectName)
+                : "(Unassigned)";
+
+            vms.Add(new TimelineEntryVm
+            {
+                Id        = entry.Id,
+                StartUtc  = entry.StartUtc,
+                EndUtc    = entry.EndUtc,
+                TimeRange = $"{localStart:HH:mm} – {endStr}",
+                Duration  = FormatDuration(TimeSpan.FromSeconds(dur)),
+                Label     = label,
+                Note      = entry.Note,
+                IsIdle    = entry.IsIdle,
+                CanSplit  = entry.EndUtc.HasValue,
+            });
+        }
+
+        TimelineList.ItemsSource = vms;
+        NoEntriesText.Visibility = vms.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        var workSpan = TimeSpan.FromSeconds(workSec);
+        var total    = $"Work {FormatDuration(workSpan)}";
+        if (idleSec > 0)
+            total += $"  Idle {FormatDuration(TimeSpan.FromSeconds(idleSec))}";
+        TodayTotalText.Text = total;
+    }
+
+    private IReadOnlyList<TimeEntryRow> LoadTodayEntries()
+    {
+        var now       = DateTime.Now;
+        var dayStart  = new DateTime(now.Year, now.Month, now.Day, 0, 0, 0, DateTimeKind.Local);
+        var dayEnd    = dayStart.AddDays(1);
+        var startUtc  = new DateTimeOffset(dayStart).ToUnixTimeSeconds();
+        var endUtc    = new DateTimeOffset(dayEnd).ToUnixTimeSeconds();
+        return new TimeEntryRepository(AppRef.DbPath).GetTodayEntries(startUtc, endUtc);
+    }
+
+    private static string FormatDuration(TimeSpan t)
+    {
+        if (t.TotalHours >= 1) return $"{(int)t.TotalHours}h {t.Minutes}m";
+        if (t.TotalMinutes >= 1) return $"{(int)t.TotalMinutes}m {t.Seconds}s";
+        return $"{t.Seconds}s";
     }
 
     // ── Load helpers ─────────────────────────────────────────────────────
@@ -222,7 +374,6 @@ public partial class MainWindow : Window
 
         if (running)
         {
-            // Sync fields to the running entry
             LoadProjectCombo();
             SetTaskName(AppRef.RunningTaskName);
 

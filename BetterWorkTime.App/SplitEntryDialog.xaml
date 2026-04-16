@@ -1,0 +1,30 @@
+<Window x:Class="BetterWorkTime.App.SplitEntryDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Split Entry"
+        Width="300" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+
+    <DockPanel Margin="16">
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Split" Width="80" Height="30" IsDefault="True"
+                    Click="Split_Click" Margin="0,0,8,0"/>
+            <Button Content="Cancel" Width="80" Height="30" IsCancel="True"/>
+        </StackPanel>
+
+        <TextBlock x:Name="ErrorText" DockPanel.Dock="Bottom"
+                   Foreground="Red" FontSize="12" Margin="0,6,0,0"
+                   TextWrapping="Wrap" Visibility="Collapsed"/>
+
+        <StackPanel>
+            <TextBlock x:Name="RangeLabel" FontSize="12" Foreground="Gray" Margin="0,0,0,8"/>
+            <TextBlock Text="Split at (HH:mm):" FontSize="13" Margin="0,0,0,6"/>
+            <TextBox x:Name="SplitTimeBox" FontSize="14"/>
+        </StackPanel>
+
+    </DockPanel>
+</Window>

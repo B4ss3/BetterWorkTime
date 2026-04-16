@@ -5,8 +5,8 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="BetterWorkTime" Height="520" Width="400"
-        MinHeight="520" MinWidth="340">
+        Title="BetterWorkTime" Height="680" Width="420"
+        MinHeight="520" MinWidth="360">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="16">
@@ -56,7 +56,7 @@
                        Margin="0,0,0,16"/>
 
             <!-- Buttons -->
-            <WrapPanel>
+            <WrapPanel Margin="0,0,0,20">
                 <Button x:Name="StartStopButton"
                         Width="120" Height="38" Margin="0,0,8,8"
                         Click="StartStopButton_Click"/>
@@ -65,6 +65,84 @@
                         Width="120" Height="38" Margin="0,0,0,8"
                         Click="SwitchTaskButton_Click"/>
             </WrapPanel>
+
+            <!-- Today timeline -->
+            <Separator Margin="0,0,0,12"/>
+
+            <DockPanel Margin="0,0,0,10">
+                <TextBlock Text="Today" FontSize="15" FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
+                <TextBlock x:Name="TodayTotalText" DockPanel.Dock="Right"
+                           HorizontalAlignment="Right" FontSize="13"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+            </DockPanel>
+
+            <TextBlock x:Name="NoEntriesText"
+                       Text="No entries yet today."
+                       FontSize="13" FontStyle="Italic"
+                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                       Margin="0,0,0,8"/>
+
+            <ItemsControl x:Name="TimelineList">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                BorderThickness="1" CornerRadius="3"
+                                Margin="0,0,0,6" Padding="10,7">
+                            <StackPanel>
+
+                                <!-- Row 1: time + duration + label + idle badge -->
+                                <DockPanel>
+                                    <Border DockPanel.Dock="Right"
+                                            Visibility="{Binding IdleBadgeVisibility}"
+                                            Background="#FFD700" CornerRadius="3"
+                                            Padding="5,1" Margin="6,0,0,0"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="IDLE" FontSize="10" FontWeight="Bold"/>
+                                    </Border>
+                                    <TextBlock DockPanel.Dock="Right"
+                                               Text="{Binding Label}"
+                                               FontSize="12" VerticalAlignment="Center"
+                                               Margin="8,0,0,0"
+                                               Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                    <TextBlock VerticalAlignment="Center">
+                                        <Run Text="{Binding TimeRange}" FontWeight="SemiBold" FontSize="13"/>
+                                        <Run Text=" "/>
+                                        <Run Text="{Binding Duration}" FontSize="12"
+                                             Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+                                    </TextBlock>
+                                </DockPanel>
+
+                                <!-- Note row -->
+                                <TextBlock Text="{Binding Note}"
+                                           Visibility="{Binding NoteVisibility}"
+                                           FontSize="12" FontStyle="Italic"
+                                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
+                                           Margin="0,4,0,0"
+                                           TextTrimming="CharacterEllipsis"/>
+
+                                <!-- Action buttons -->
+                                <StackPanel Orientation="Horizontal"
+                                            HorizontalAlignment="Right"
+                                            Margin="0,7,0,0">
+                                    <Button Content="Edit" Tag="{Binding Id}"
+                                            Click="EditEntry_Click"
+                                            Padding="8,3" Margin="0,0,4,0" FontSize="11"/>
+                                    <Button Content="Split…" Tag="{Binding Id}"
+                                            IsEnabled="{Binding CanSplit}"
+                                            Click="SplitEntry_Click"
+                                            Padding="8,3" Margin="0,0,4,0" FontSize="11"/>
+                                    <Button Content="Delete" Tag="{Binding Id}"
+                                            Click="DeleteEntry_Click"
+                                            Padding="8,3" FontSize="11"/>
+                                </StackPanel>
+
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
 
         </StackPanel>
     </ScrollViewer>

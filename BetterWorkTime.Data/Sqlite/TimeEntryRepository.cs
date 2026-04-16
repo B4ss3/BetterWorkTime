@@ -179,4 +179,150 @@ INSERT INTO time_entries(
         cmd.ExecuteNonQuery();
     }
 
+    public IReadOnlyList<TimeEntryRow> GetTodayEntries(long dayStartUtc, long dayEndUtc)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+SELECT te.id, te.start_utc, te.end_utc, te.duration_sec,
+       te.project_id, p.name,
+       te.task_id,    t.name,
+       te.note,       te.is_idle
+FROM time_entries te
+LEFT JOIN projects p ON te.project_id = p.id
+LEFT JOIN tasks    t ON te.task_id    = t.id
+WHERE te.start_utc < $dayEnd
+  AND (te.end_utc IS NULL OR te.end_utc > $dayStart)
+ORDER BY te.start_utc ASC;
+""";
+        cmd.Parameters.AddWithValue("$dayStart", dayStartUtc);
+        cmd.Parameters.AddWithValue("$dayEnd",   dayEndUtc);
+
+        var rows = new List<TimeEntryRow>();
+        using var r = cmd.ExecuteReader();
+        while (r.Read())
+        {
+            rows.Add(new TimeEntryRow(
+                Id:          r.GetString(0),
+                StartUtc:    r.GetInt64(1),
+                EndUtc:      r.IsDBNull(2) ? null : r.GetInt64(2),
+                DurationSec: r.IsDBNull(3) ? 0L   : r.GetInt64(3),
+                ProjectId:   r.IsDBNull(4) ? null : r.GetString(4),
+                ProjectName: r.IsDBNull(5) ? null : r.GetString(5),
+                TaskId:      r.IsDBNull(6) ? null : r.GetString(6),
+                TaskName:    r.IsDBNull(7) ? null : r.GetString(7),
+                Note:        r.IsDBNull(8) ? null : r.GetString(8),
+                IsIdle:      r.GetInt32(9) == 1));
+        }
+        return rows;
+    }
+
+    public void DeleteEntry(string entryId)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "DELETE FROM time_entries WHERE id = $id;";
+        cmd.Parameters.AddWithValue("$id", entryId);
+        cmd.ExecuteNonQuery();
+    }
+
+    public void UpdateEntryFull(string entryId, long startUtc, long endUtc,
+        string? projectId, string? taskId, string? note)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+UPDATE time_entries
+SET start_utc    = $start,
+    end_utc      = $end,
+    duration_sec = CASE WHEN $end > $start THEN ($end - $start) ELSE 0 END,
+    project_id   = $pid,
+    task_id      = $tid,
+    note         = $note
+WHERE id = $id;
+""";
+        cmd.Parameters.AddWithValue("$start", startUtc);
+        cmd.Parameters.AddWithValue("$end",   endUtc);
+        cmd.Parameters.AddWithValue("$pid",   (object?)projectId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$tid",   (object?)taskId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$note",  (object?)note      ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$id",    entryId);
+        cmd.ExecuteNonQuery();
+    }
+
+    /// <summary>Splits a completed entry at splitUtc, returning the id of the second (new) entry.</summary>
+    public string SplitEntry(string entryId, long splitUtc, string source)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+        using var tx = conn.BeginTransaction();
+
+        // Read original entry
+        string? projectId = null, taskId = null, note = null;
+        long originalEnd = 0;
+
+        using (var read = conn.CreateCommand())
+        {
+            read.Transaction = tx;
+            read.CommandText = "SELECT project_id, task_id, note, end_utc FROM time_entries WHERE id = $id;";
+            read.Parameters.AddWithValue("$id", entryId);
+            using var r = read.ExecuteReader();
+            if (r.Read())
+            {
+                projectId   = r.IsDBNull(0) ? null : r.GetString(0);
+                taskId      = r.IsDBNull(1) ? null : r.GetString(1);
+                note        = r.IsDBNull(2) ? null : r.GetString(2);
+                originalEnd = r.IsDBNull(3) ? splitUtc : r.GetInt64(3);
+            }
+        }
+
+        // Trim original to split point
+        using (var upd = conn.CreateCommand())
+        {
+            upd.Transaction = tx;
+            upd.CommandText = """
+UPDATE time_entries
+SET end_utc = $split,
+    duration_sec = CASE WHEN $split > start_utc THEN ($split - start_utc) ELSE 0 END
+WHERE id = $id;
+""";
+            upd.Parameters.AddWithValue("$split", splitUtc);
+            upd.Parameters.AddWithValue("$id",    entryId);
+            upd.ExecuteNonQuery();
+        }
+
+        // Insert second entry
+        var newId = Guid.NewGuid().ToString("N");
+        var dur   = originalEnd > splitUtc ? originalEnd - splitUtc : 0L;
+
+        using (var ins = conn.CreateCommand())
+        {
+            ins.Transaction = tx;
+            ins.CommandText = """
+INSERT INTO time_entries(id, project_id, task_id, start_utc, end_utc, duration_sec,
+                         note, source, is_idle, idle_adjusted, created_at_utc)
+VALUES ($id, $pid, $tid, $start, $end, $dur, $note, $source, 0, 0, $created);
+""";
+            ins.Parameters.AddWithValue("$id",      newId);
+            ins.Parameters.AddWithValue("$pid",     (object?)projectId ?? DBNull.Value);
+            ins.Parameters.AddWithValue("$tid",     (object?)taskId    ?? DBNull.Value);
+            ins.Parameters.AddWithValue("$start",   splitUtc);
+            ins.Parameters.AddWithValue("$end",     originalEnd);
+            ins.Parameters.AddWithValue("$dur",     dur);
+            ins.Parameters.AddWithValue("$note",    (object?)note      ?? DBNull.Value);
+            ins.Parameters.AddWithValue("$source",  source);
+            ins.Parameters.AddWithValue("$created", splitUtc);
+            ins.ExecuteNonQuery();
+        }
+
+        tx.Commit();
+        return newId;
+    }
+
 }
