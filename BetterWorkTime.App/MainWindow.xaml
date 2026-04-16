@@ -18,6 +18,9 @@
                 <Button Content="Settings…" DockPanel.Dock="Right"
                         HorizontalAlignment="Right" Padding="8,4" Margin="0,0,6,0"
                         Click="SettingsButton_Click"/>
+                <Button Content="Reports…" DockPanel.Dock="Right"
+                        HorizontalAlignment="Right" Padding="8,4" Margin="0,0,6,0"
+                        Click="ReportsButton_Click"/>
                 <Button Content="Manage…" DockPanel.Dock="Right"
                         HorizontalAlignment="Right" Padding="8,4"
                         Click="ManageButton_Click"/>

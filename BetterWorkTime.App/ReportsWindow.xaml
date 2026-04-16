@@ -1,0 +1,124 @@
+<Window x:Class="BetterWorkTime.App.ReportsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Reports — BetterWorkTime"
+        Width="860" Height="620"
+        MinWidth="700" MinHeight="480"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="True">
+
+    <DockPanel>
+
+        <!-- ── Filter bar (top) ───────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="0,0,0,1" Padding="12,10">
+            <WrapPanel>
+
+                <!-- Date preset -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
+                    <TextBlock Text="Period:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="PeriodCombo" Width="130"
+                              SelectionChanged="PeriodCombo_SelectionChanged"/>
+                </StackPanel>
+
+                <!-- Custom range -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center"
+                            x:Name="CustomRangePanel" Visibility="Collapsed">
+                    <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <DatePicker x:Name="FromPicker" Width="120" Margin="0,0,8,0"
+                                SelectedDateChanged="DateFilter_Changed"/>
+                    <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                    <DatePicker x:Name="ToPicker" Width="120"
+                                SelectedDateChanged="DateFilter_Changed"/>
+                </StackPanel>
+
+                <!-- Project filter -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
+                    <TextBlock Text="Project:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="ProjectFilterCombo" Width="140" DisplayMemberPath="Name"
+                              SelectionChanged="Filter_Changed"/>
+                </StackPanel>
+
+                <!-- Note search -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
+                    <TextBlock Text="Note:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <TextBox x:Name="NoteSearchBox" Width="130"
+                             TextChanged="NoteSearch_Changed"/>
+                </StackPanel>
+
+                <!-- Include idle -->
+                <CheckBox x:Name="IncludeIdleBox"
+                          Content="Include idle" VerticalAlignment="Center"
+                          Margin="0,0,16,4"
+                          Checked="Filter_Changed" Unchecked="Filter_Changed"/>
+
+                <!-- Export -->
+                <Button Content="Export CSV…" Padding="10,4"
+                        VerticalAlignment="Center"
+                        Click="ExportCsv_Click"/>
+
+            </WrapPanel>
+        </Border>
+
+        <!-- ── Summary bar (bottom) ──────────────────────────────────── -->
+        <Border DockPanel.Dock="Bottom"
+                BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                BorderThickness="0,1,0,0" Padding="12,6">
+            <DockPanel>
+                <TextBlock x:Name="SummaryText" FontSize="13"
+                           VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Tab area ───────────────────────────────────────────────── -->
+        <TabControl Margin="0">
+
+            <!-- Entries list -->
+            <TabItem Header="Entries">
+                <ListView x:Name="EntriesList" BorderThickness="0">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Date"     Width="90"
+                                DisplayMemberBinding="{Binding DateStr}"/>
+                            <GridViewColumn Header="Start"    Width="58"
+                                DisplayMemberBinding="{Binding StartStr}"/>
+                            <GridViewColumn Header="End"      Width="58"
+                                DisplayMemberBinding="{Binding EndStr}"/>
+                            <GridViewColumn Header="Duration" Width="72"
+                                DisplayMemberBinding="{Binding DurationStr}"/>
+                            <GridViewColumn Header="Project"  Width="120"
+                                DisplayMemberBinding="{Binding ProjectName}"/>
+                            <GridViewColumn Header="Task"     Width="130"
+                                DisplayMemberBinding="{Binding TaskName}"/>
+                            <GridViewColumn Header="Tags"     Width="100"
+                                DisplayMemberBinding="{Binding Tags}"/>
+                            <GridViewColumn Header="Note"     Width="200"
+                                DisplayMemberBinding="{Binding Note}"/>
+                            <GridViewColumn Header="Idle"     Width="40"
+                                DisplayMemberBinding="{Binding IdleStr}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </TabItem>
+
+            <!-- Project breakdown -->
+            <TabItem Header="By Project">
+                <ListView x:Name="BreakdownList" BorderThickness="0">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Project"  Width="200"
+                                DisplayMemberBinding="{Binding ProjectName}"/>
+                            <GridViewColumn Header="Duration" Width="100"
+                                DisplayMemberBinding="{Binding DurationStr}"/>
+                            <GridViewColumn Header="Share"    Width="80"
+                                DisplayMemberBinding="{Binding ShareStr}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </TabItem>
+
+        </TabControl>
+
+    </DockPanel>
+</Window>

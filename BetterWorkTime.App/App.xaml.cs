@@ -249,6 +249,15 @@ public partial class App : Application
         // Settings are read live from DB on next tick — no extra wiring needed
     }
 
+    internal void OpenReports()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenReports); return; }
+
+        var win = new ReportsWindow(_dbPath!);
+        win.Owner = MainWindow;
+        win.Show();
+    }
+
     // ── Tracking ─────────────────────────────────────────────────────────
 
     private void RestoreRuntimeState()
@@ -453,6 +462,9 @@ public partial class App : Application
         var open = new MenuItem { Header = "Open BetterWorkTime" };
         open.Click += (_, __) => Dispatcher.Invoke(ShowMainWindow);
 
+        var reports = new MenuItem { Header = "Reports…" };
+        reports.Click += (_, __) => Dispatcher.Invoke(OpenReports);
+
         var settings = new MenuItem { Header = "Settings…" };
         settings.Click += (_, __) => OpenSettings();
 
@@ -464,6 +476,7 @@ public partial class App : Application
         menu.Items.Add(addNote);
         menu.Items.Add(new Separator());
         menu.Items.Add(open);
+        menu.Items.Add(reports);
         menu.Items.Add(settings);
         menu.Items.Add(quit);
 

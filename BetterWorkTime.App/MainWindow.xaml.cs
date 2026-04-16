@@ -125,6 +125,9 @@ public partial class MainWindow : Window
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
         => AppRef.OpenSettings();
 
+    private void ReportsButton_Click(object sender, RoutedEventArgs e)
+        => AppRef.OpenReports();
+
     private void ManageButton_Click(object sender, RoutedEventArgs e)
     {
         var win = new ManageDataWindow(AppRef.DbPath);

@@ -82,35 +82,34 @@
 - [ ] Default reports exclude idle; toggle “Include idle” (deferred to M4)
 
 ### M2.5 — Today screen timeline
-- [ ] Query all time_entries for today (local day boundary)
-- [ ] Timeline list in main window: start–end, duration, project/task, note
-- [ ] Idle entries shown with distinct “Idle” badge
-- [ ] Totals row: Work total (+ Idle total if any idle entries exist)
-- [ ] Entry actions:
-  - [ ] Edit (start/end, project/task, tags, note)
-  - [ ] Split at time (copies project/task/tags/note to both parts)
-  - [ ] Delete with confirmation (hard delete)
-- [ ] Overlap validation: reject edits that would cause overlaps
+- [x] Query all time_entries for today (local day boundary)
+- [x] Timeline list in main window: start–end, duration, project/task, note
+- [x] Idle entries shown with distinct “Idle” badge
+- [x] Totals row: Work total (+ Idle total if any idle entries exist)
+- [x] Entry actions:
+  - [x] Edit (start/end, project/task, tags, note)
+  - [x] Split at time (copies project/task to both parts)
+  - [x] Delete with confirmation (hard delete)
+- [x] Overlap validation: reject edits that would cause overlaps
 
 ### M3 — Hydration reminders + Settings window
 
-#### M3a — Settings window (required before hydration UI)
-- [ ] Settings window (tabbed): opened from tray menu + main window "Settings…" button
-- [ ] **Tracking tab**: idle threshold (minutes, default 5)
-- [ ] **Hydration tab**:
-  - [ ] Enable/disable toggle
-  - [ ] Interval (minutes, default 30)
-  - [ ] Sound picker: 2–3 bundled .wav files (chime, bell, ding) + "Browse…" for custom file
-  - [ ] Preview button to play selected sound
-- [ ] Settings persisted to `settings` table (key/value JSON, already in schema)
-- [ ] `SettingsRepository` to read/write settings
+#### M3a — Settings window
+- [x] Settings window (tabbed): opened from tray menu + main window “Settings…” button
+- [x] **Tracking tab**: idle threshold (minutes, default 5)
+- [x] **Hydration tab**:
+  - [x] Enable/disable toggle
+  - [x] Interval (minutes, default 30)
+  - [x] Sound picker: Windows system sounds (Chimes/Chord/Notify) + “Browse…” for custom file
+  - [x] Preview button to play selected sound
+- [x] Settings persisted to `settings` table
+- [x] `SettingsRepository` to read/write settings
 
 #### M3b — Hydration logic
-- [ ] Accumulate progress only while tracking is running (pause when stopped)
-- [ ] Topmost popup when interval hit; Close resets timer (no snooze)
-- [ ] Sound plays on popup show
-- [ ] Focus Assist respect: delay popup if Focus Assist is active
-- [ ] 2–3 bundled `.wav` files included in app output (`Content`, `CopyAlways`)
+- [x] Accumulate progress only while tracking is running (pause when stopped)
+- [x] Topmost popup when interval hit; Close resets timer (no snooze)
+- [x] Sound plays on popup show
+- [x] Focus Assist respect: delay popup if Focus Assist is active
 
 ### M4 — Reports + Export
 - [ ] Reports screen (separate window)
