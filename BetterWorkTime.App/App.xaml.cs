@@ -129,6 +129,7 @@ public partial class App : Application
 
         SystemEvents.PowerModeChanged += OnPowerModeChanged;
 
+        RefreshCachedSettings();
         ApplyHotkeySettings();
 
         var settings = new SettingsRepository(_dbPath!);
@@ -149,8 +150,15 @@ public partial class App : Application
 
     // ── Idle detection ───────────────────────────────────────────────────
 
-    private int IdleThresholdSeconds =>
-        new SettingsRepository(_dbPath!).GetInt(SettingsWindow.KeyIdleThreshold, 5) * 60;
+    private int _cachedIdleThresholdSeconds = 5 * 60;
+
+    private int IdleThresholdSeconds => _cachedIdleThresholdSeconds;
+
+    internal void RefreshCachedSettings()
+    {
+        _cachedIdleThresholdSeconds =
+            new SettingsRepository(_dbPath!).GetInt(SettingsWindow.KeyIdleThreshold, 5) * 60;
+    }
 
     private void OnIdleTick(object? sender, EventArgs e)
     {

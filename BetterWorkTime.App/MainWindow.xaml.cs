@@ -70,8 +70,14 @@ public partial class MainWindow : Window
         TaskNameBox.IsEnabled = hasProject;
         if (!hasProject) SetDefaultTaskText();
 
-        if (AppRef.IsTracking)
-            ExecuteSwitchWithCurrentContext();
+        // Only auto-switch if tracking AND the user changed the project themselves (not a UI reload)
+        if (AppRef.IsTracking && e.RemovedItems.Count > 0)
+        {
+            var newId = (ProjectCombo.SelectedItem as ProjectItem)?.Id;
+            var oldId = (e.RemovedItems[0] as ProjectItem)?.Id;
+            if (newId != oldId)
+                ExecuteSwitchWithCurrentContext();
+        }
     }
 
     private void TaskNameBox_GotFocus(object sender, RoutedEventArgs e)
@@ -158,6 +164,8 @@ public partial class MainWindow : Window
         new TimeEntryRepository(AppRef.DbPath).UpdateEntryFull(
             id, dlg.ResultStartUtc, dlg.ResultEndUtc,
             dlg.ResultProjectId, taskId, dlg.ResultNote);
+
+        new TagRepository(AppRef.DbPath).SetForEntry(id, dlg.ResultTagIds);
 
         RefreshTimeline();
     }

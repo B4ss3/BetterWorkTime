@@ -126,18 +126,33 @@
   - [x] Canonical column order
 
 ### M5 — Hardening + Packaging
-- [ ] “Stop at last seen” recovery (beyond Stop now)
-- [ ] Persist runtime snapshot every 5s while running + major events
-- [ ] Sleep/wake: treat gap as idle and prompt once after resume
-- [ ] Rotating logs to `%LOCALAPPDATA%\BetterWorkTime\Logs\` + “Open logs”
-- [ ] Settings UI remaining tabs (Tracking + Hydration done in M3):
-  - [ ] General: start minimized, open data folder
-  - [ ] Export: open folder after export, remember last folder
-  - [ ] About: version + open logs
-- [ ] Global hotkeys (disabled by default):
-  - [ ] Start/Stop: Ctrl+Alt+S
-  - [ ] Switch Task: Ctrl+Alt+T
-  - [ ] Open main: Ctrl+Alt+O
-  - [ ] Add Note: Ctrl+Alt+N
-  - [ ] Show message if registration fails due to conflict
+- [x] “Stop at last seen” recovery (beyond Stop now)
+- [x] Persist runtime snapshot every 5s while running + major events
+- [x] Sleep/wake: treat gap as idle and prompt once after resume
+- [x] Rotating logs to `%LOCALAPPDATA%\BetterWorkTime\Logs\` + “Open logs”
+- [x] Settings UI remaining tabs:
+  - [x] General: start minimized, open data folder, hotkeys toggle
+  - [x] Export: open folder after export, remember last folder
+  - [x] About: version + open logs
+- [x] Global hotkeys (disabled by default):
+  - [x] Start/Stop: Ctrl+Alt+S
+  - [x] Switch Task: Ctrl+Alt+T
+  - [x] Open main: Ctrl+Alt+O
+  - [x] Add Note: Ctrl+Alt+N
 - [ ] Self-contained installer; uninstall leaves user data by default
+
+### M6 — Polish + Bug fixes
+
+#### Bugs
+- [ ] **Tags lost on split** — `SplitEntry` duplicates project/task/note but not `time_entry_tags` rows; second half has no tags
+- [ ] **Tags not editable in Edit Entry dialog** — dialog shows project/task/note but tags are not displayed or preserved
+- [ ] **Project dropdown switches task while tracking** — `ProjectCombo_SelectionChanged` calls `ExecuteSwitchWithCurrentContext()` on every selection change, including accidental ones; should require explicit confirmation or only trigger on Start
+- [ ] **`IdleThresholdSeconds` reads DB on every 1s tick** — creates a new `SettingsRepository` + SQLite connection 60× per minute; cache the value and re-read only when settings are saved
+
+#### UX improvements
+- [ ] **Tray icon reflects tracking state** — green icon when tracking, gray when stopped (requires a custom .ico with two states)
+- [ ] **Tray tooltip shows running entry** — e.g. `”MyProject / Task — 1h 23m”` instead of the static `”BetterWorkTime”`
+- [ ] **Quick-start from tray** — “Recent entries” submenu (last 5 distinct project/task combos) for one-click resume without opening the main window
+- [ ] **Tags shown in today's timeline** — timeline entry cards currently omit tags; show them as small chips below the time range row
+- [ ] **Reports window singleton** — opening Reports… multiple times creates duplicate windows; bring existing window to focus if already open
+- [ ] **Running entry visible in reports** — `GetEntries` filters `end_utc IS NOT NULL` so the live session never appears; show it as a “live” row with current elapsed

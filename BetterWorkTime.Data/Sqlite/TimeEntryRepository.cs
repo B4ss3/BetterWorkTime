@@ -321,6 +321,19 @@ VALUES ($id, $pid, $tid, $start, $end, $dur, $note, $source, 0, 0, $created);
             ins.ExecuteNonQuery();
         }
 
+        // Copy tags to the new entry
+        using (var copyTags = conn.CreateCommand())
+        {
+            copyTags.Transaction = tx;
+            copyTags.CommandText = """
+INSERT INTO time_entry_tags(time_entry_id, tag_id)
+SELECT $newId, tag_id FROM time_entry_tags WHERE time_entry_id = $oldId;
+""";
+            copyTags.Parameters.AddWithValue("$newId", newId);
+            copyTags.Parameters.AddWithValue("$oldId", entryId);
+            copyTags.ExecuteNonQuery();
+        }
+
         tx.Commit();
         return newId;
     }

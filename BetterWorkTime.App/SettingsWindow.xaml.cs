@@ -196,8 +196,9 @@ public partial class SettingsWindow : Window
         _settings.SetBool(KeyRespectFocusAssist,    RespectFocusAssistBox.IsChecked == true);
         _settings.SetBool(KeyOpenFolderAfterExport, OpenFolderAfterExportBox.IsChecked == true);
 
-        // Apply hotkey changes immediately
-        ((App)Application.Current).ApplyHotkeySettings();
+        var app = (App)Application.Current;
+        app.RefreshCachedSettings();
+        app.ApplyHotkeySettings();
 
         DialogResult = true;
     }

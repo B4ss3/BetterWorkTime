@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using BetterWorkTime.Data.Sqlite;
@@ -18,9 +19,10 @@ public partial class EditEntryDialog : Window
 
     public long ResultStartUtc  { get; private set; }
     public long ResultEndUtc    { get; private set; }
-    public string? ResultProjectId { get; private set; }
-    public string? ResultTaskName  { get; private set; }
-    public string? ResultNote      { get; private set; }
+    public string? ResultProjectId          { get; private set; }
+    public string? ResultTaskName           { get; private set; }
+    public string? ResultNote               { get; private set; }
+    public IReadOnlyList<string> ResultTagIds { get; private set; } = Array.Empty<string>();
 
     public EditEntryDialog(string dbPath, TimeEntryRow entry,
         IReadOnlyList<TimeEntryRow> todayEntries)
@@ -35,6 +37,7 @@ public partial class EditEntryDialog : Window
         Loaded += (_, _) =>
         {
             LoadProjectCombo(entry.ProjectId);
+            LoadTagsPanel(entry.Id);
             SetTaskName(entry.TaskName);
             NoteBox.Text = entry.Note ?? string.Empty;
 
@@ -54,6 +57,25 @@ public partial class EditEntryDialog : Window
             StartBox.Focus();
             StartBox.SelectAll();
         };
+    }
+
+    private void LoadTagsPanel(string entryId)
+    {
+        TagsPanel.Children.Clear();
+        var entryTagIds = new HashSet<string>(
+            new TagRepository(_dbPath).GetForEntry(entryId).Select(t => t.Id));
+
+        foreach (var tag in new TagRepository(_dbPath).GetAllActive())
+        {
+            var cb = new CheckBox
+            {
+                Content   = tag.Name,
+                Tag       = tag.Id,
+                IsChecked = entryTagIds.Contains(tag.Id),
+                Margin    = new Thickness(4, 2, 4, 2)
+            };
+            TagsPanel.Children.Add(cb);
+        }
     }
 
     private void LoadProjectCombo(string? selectId)
@@ -157,6 +179,10 @@ public partial class EditEntryDialog : Window
         ResultProjectId = (ProjectCombo.SelectedItem as ProjectItem)?.Id;
         ResultTaskName  = GetTaskName();
         ResultNote      = string.IsNullOrWhiteSpace(NoteBox.Text) ? null : NoteBox.Text.Trim();
+        ResultTagIds    = TagsPanel.Children.OfType<CheckBox>()
+                            .Where(cb => cb.IsChecked == true && cb.Tag is string)
+                            .Select(cb => (string)cb.Tag)
+                            .ToList();
 
         DialogResult = true;
     }

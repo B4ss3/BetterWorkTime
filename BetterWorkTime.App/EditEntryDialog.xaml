@@ -56,6 +56,15 @@
                      GotFocus="TaskBox_GotFocus"
                      LostFocus="TaskBox_LostFocus"/>
 
+            <!-- Tags -->
+            <TextBlock Text="Tags" FontSize="12" Margin="0,0,0,4"/>
+            <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                    BorderThickness="1" CornerRadius="2" MaxHeight="72" Margin="0,0,0,10">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4">
+                    <WrapPanel x:Name="TagsPanel"/>
+                </ScrollViewer>
+            </Border>
+
             <!-- Note -->
             <TextBlock Text="Note" FontSize="12" Margin="0,0,0,4"/>
             <TextBox x:Name="NoteBox" Height="54"
