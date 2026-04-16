@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Media;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,9 +32,13 @@ public partial class App : Application
 
     // Idle detection
     private readonly DispatcherTimer _idleTick = new() { Interval = TimeSpan.FromSeconds(1) };
-    private const int IdleThresholdSeconds = 5 * 60; // 5 min default (settings wiring in M5)
     private bool _idlePromptShowing;
     private long? _idleStartUtc;
+
+    // Hydration
+    private long _hydrationAccSec;     // accumulated tracking seconds since last reminder
+    private long _hydrationLastTickUtc;
+    private bool _hydrationPromptShowing;
 
     internal static bool IsQuitting { get; private set; }
     internal string DbPath => _dbPath!;
@@ -109,8 +114,13 @@ public partial class App : Application
 
     // ── Idle detection ───────────────────────────────────────────────────
 
+    private int IdleThresholdSeconds =>
+        new SettingsRepository(_dbPath!).GetInt(SettingsWindow.KeyIdleThreshold, 5) * 60;
+
     private void OnIdleTick(object? sender, EventArgs e)
     {
+        TickHydration();
+
         if (!_isTracking || _idlePromptShowing) return;
 
         var idleSec = IdleDetector.GetIdleSeconds();
@@ -175,6 +185,68 @@ public partial class App : Application
         UpdateTrayStartStopHeader();
         UpdateTraySwitchTaskEnabled();
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── Hydration ────────────────────────────────────────────────────────
+
+    private void TickHydration()
+    {
+        if (_hydrationPromptShowing) return;
+
+        var nowUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+        if (_isTracking && _hydrationLastTickUtc > 0)
+            _hydrationAccSec += nowUtc - _hydrationLastTickUtc;
+
+        _hydrationLastTickUtc = nowUtc;
+
+        if (!_isTracking) return;
+
+        var settings          = new SettingsRepository(_dbPath!);
+        var enabled           = settings.GetBool(SettingsWindow.KeyHydrationEnabled, false);
+        if (!enabled) return;
+
+        var intervalSec = settings.GetInt(SettingsWindow.KeyHydrationInterval, 30) * 60;
+        if (_hydrationAccSec < intervalSec) return;
+
+        var respectFocus = settings.GetBool(SettingsWindow.KeyRespectFocusAssist, true);
+        if (respectFocus && FocusAssistDetector.IsActive()) return;
+
+        ShowHydrationPrompt(settings);
+    }
+
+    private void ShowHydrationPrompt(SettingsRepository settings)
+    {
+        _hydrationPromptShowing = true;
+        _hydrationAccSec        = 0;
+
+        // Play sound
+        var soundPath = settings.GetString(SettingsWindow.KeyHydrationSound);
+        if (!string.IsNullOrWhiteSpace(soundPath) && File.Exists(soundPath))
+        {
+            try { new SoundPlayer(soundPath).Play(); } catch { /* best effort */ }
+        }
+
+        var prompt = new HydrationPromptWindow();
+        prompt.Closed += (_, _) => { _hydrationPromptShowing = false; };
+        prompt.Show();
+    }
+
+    internal void ResetHydrationTimer()
+    {
+        _hydrationAccSec        = 0;
+        _hydrationPromptShowing = false;
+    }
+
+    // ── Settings ──────────────────────────────────────────────────────────
+
+    internal void OpenSettings()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenSettings); return; }
+
+        var win = new SettingsWindow(_dbPath!) { Owner = MainWindow };
+        win.ShowDialog();
+        // Settings are read live from DB on next tick — no extra wiring needed
     }
 
     // ── Tracking ─────────────────────────────────────────────────────────
@@ -381,6 +453,9 @@ public partial class App : Application
         var open = new MenuItem { Header = "Open BetterWorkTime" };
         open.Click += (_, __) => Dispatcher.Invoke(ShowMainWindow);
 
+        var settings = new MenuItem { Header = "Settings…" };
+        settings.Click += (_, __) => OpenSettings();
+
         var quit = new MenuItem { Header = "Quit" };
         quit.Click += (_, __) => QuitApp();
 
@@ -389,6 +464,7 @@ public partial class App : Application
         menu.Items.Add(addNote);
         menu.Items.Add(new Separator());
         menu.Items.Add(open);
+        menu.Items.Add(settings);
         menu.Items.Add(quit);
 
         return menu;

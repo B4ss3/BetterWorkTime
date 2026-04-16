@@ -92,12 +92,25 @@
   - [ ] Delete with confirmation (hard delete)
 - [ ] Overlap validation: reject edits that would cause overlaps
 
-### M3 — Hydration reminders
-- [ ] Settings wiring: enable, interval, sound, respect Focus Assist
-- [ ] Accumulate hydration progress only while tracking is running
-- [ ] Topmost popup + animation; Close resets hydration timer (no snooze)
-- [ ] Sound: `System.Media.SoundPlayer` playing a .wav file
+### M3 — Hydration reminders + Settings window
+
+#### M3a — Settings window (required before hydration UI)
+- [ ] Settings window (tabbed): opened from tray menu + main window "Settings…" button
+- [ ] **Tracking tab**: idle threshold (minutes, default 5)
+- [ ] **Hydration tab**:
+  - [ ] Enable/disable toggle
+  - [ ] Interval (minutes, default 30)
+  - [ ] Sound picker: 2–3 bundled .wav files (chime, bell, ding) + "Browse…" for custom file
+  - [ ] Preview button to play selected sound
+- [ ] Settings persisted to `settings` table (key/value JSON, already in schema)
+- [ ] `SettingsRepository` to read/write settings
+
+#### M3b — Hydration logic
+- [ ] Accumulate progress only while tracking is running (pause when stopped)
+- [ ] Topmost popup when interval hit; Close resets timer (no snooze)
+- [ ] Sound plays on popup show
 - [ ] Focus Assist respect: delay popup if Focus Assist is active
+- [ ] 2–3 bundled `.wav` files included in app output (`Content`, `CopyAlways`)
 
 ### M4 — Reports + Export
 - [ ] Reports screen (separate window)
@@ -119,10 +132,8 @@
 - [ ] Persist runtime snapshot every 5s while running + major events
 - [ ] Sleep/wake: treat gap as idle and prompt once after resume
 - [ ] Rotating logs to `%LOCALAPPDATA%\BetterWorkTime\Logs\` + “Open logs”
-- [ ] Settings UI:
+- [ ] Settings UI remaining tabs (Tracking + Hydration done in M3):
   - [ ] General: start minimized, open data folder
-  - [ ] Tracking: idle threshold
-  - [ ] Hydration: enable, interval, sound, respect Focus Assist
   - [ ] Export: open folder after export, remember last folder
   - [ ] About: version + open logs
 - [ ] Global hotkeys (disabled by default):
