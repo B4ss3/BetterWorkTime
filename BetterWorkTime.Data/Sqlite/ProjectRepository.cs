@@ -80,6 +80,17 @@ VALUES ($id, $name, $color, 0, $now);
         return id;
     }
 
+    public string? GetName(string id)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT name FROM projects WHERE id = $id LIMIT 1;";
+        cmd.Parameters.AddWithValue("$id", id);
+        return cmd.ExecuteScalar()?.ToString();
+    }
+
     public void SetArchived(string id, bool archived)
     {
         using var conn = new SqliteConnection(_connectionString);

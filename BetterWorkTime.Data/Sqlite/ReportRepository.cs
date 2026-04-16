@@ -25,16 +25,21 @@ public sealed class ReportRepository
         conn.Open();
 
         var sql = new StringBuilder("""
-SELECT te.id, te.start_utc, te.end_utc, te.duration_sec,
+SELECT te.id, te.start_utc,
+       COALESCE(te.end_utc, strftime('%s','now')) AS end_utc,
+       CASE
+           WHEN te.end_utc IS NOT NULL THEN te.duration_sec
+           ELSE COALESCE(strftime('%s','now') - te.start_utc, 0)
+       END AS duration_sec,
        te.project_id, p.name,
        te.task_id,    t.name,
-       te.note,       te.is_idle
+       te.note,       te.is_idle,
+       CASE WHEN te.end_utc IS NULL THEN 1 ELSE 0 END AS is_live
 FROM time_entries te
 LEFT JOIN projects p ON te.project_id = p.id
 LEFT JOIN tasks    t ON te.task_id    = t.id
-WHERE te.end_utc IS NOT NULL
-  AND te.start_utc >= $start
-  AND te.end_utc   <= $end
+WHERE te.start_utc >= $start
+  AND (te.end_utc IS NULL OR te.end_utc <= $end)
 """);
 
         if (!q.IncludeIdle)
@@ -99,6 +104,7 @@ WHERE te.end_utc IS NOT NULL
                 TaskName:    r.IsDBNull(7) ? null : r.GetString(7),
                 Note:        r.IsDBNull(8) ? null : r.GetString(8),
                 IsIdle:      r.GetInt32(9) == 1,
+                IsLive:      r.GetInt32(10) == 1,
                 TagNames:    Array.Empty<string>()));
         }
 

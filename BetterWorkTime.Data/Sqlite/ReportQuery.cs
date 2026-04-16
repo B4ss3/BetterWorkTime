@@ -26,6 +26,7 @@ public sealed record ReportEntryRow(
     string? TaskName,
     string? Note,
     bool    IsIdle,
+    bool    IsLive,
     IReadOnlyList<string> TagNames);
 
 /// <summary>One row in the project breakdown.</summary>

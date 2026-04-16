@@ -289,6 +289,7 @@ public partial class App : Application
         _lastSnapshotUtc = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         _runtime?.Set("tracking.last_seen_utc", _lastSnapshotUtc.ToString());
         PersistRunningState();
+        UpdateTrayTooltip();
     }
 
     private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
@@ -361,13 +362,23 @@ public partial class App : Application
         // Settings are read live from DB on next tick — no extra wiring needed
     }
 
+    private ReportsWindow? _reportsWindow;
+
     internal void OpenReports()
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenReports); return; }
 
-        var win = new ReportsWindow(_dbPath!);
-        win.Owner = MainWindow;
-        win.Show();
+        if (_reportsWindow != null)
+        {
+            _reportsWindow.WindowState = System.Windows.WindowState.Normal;
+            _reportsWindow.Activate();
+            return;
+        }
+
+        _reportsWindow = new ReportsWindow(_dbPath!);
+        _reportsWindow.Owner = MainWindow;
+        _reportsWindow.Closed += (_, _) => _reportsWindow = null;
+        _reportsWindow.Show();
     }
 
     // ── Tracking ─────────────────────────────────────────────────────────
@@ -433,6 +444,8 @@ public partial class App : Application
             _runningTaskName  = taskName;
             _runningNote      = note;
             _isTracking       = true;
+            _cachedRunningProjectName = null;
+            _cachedRunningProjectId   = null;
             AppLogger.Log($"Tracking started: project={projectId ?? "none"} task={taskName ?? "none"}");
 
             if (!string.IsNullOrWhiteSpace(note))
@@ -450,6 +463,7 @@ public partial class App : Application
 
         UpdateTrayStartStopHeader();
         UpdateTraySwitchTaskEnabled();
+        UpdateTrayTooltip();
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
@@ -556,6 +570,45 @@ public partial class App : Application
     {
         if (_traySwitchTaskItem != null)
             _traySwitchTaskItem.IsEnabled = _isTracking;
+    }
+
+    private void UpdateTrayTooltip()
+    {
+        if (_trayIcon == null) return;
+
+        if (!_isTracking)
+        {
+            _trayIcon.ToolTipText = "BetterWorkTime — Stopped";
+            return;
+        }
+
+        var elapsed = GetElapsed();
+        var elapsed_str = elapsed.TotalHours >= 1
+            ? $"{(int)elapsed.TotalHours}h {elapsed.Minutes}m"
+            : $"{(int)elapsed.TotalMinutes}m";
+
+        var label = _runningProjectId != null
+            ? (_runningTaskName != null
+                ? $"{_runningProjectId_name()} / {_runningTaskName}"
+                : _runningProjectId_name())
+            : "(Unassigned)";
+
+        _trayIcon.ToolTipText = $"{label} — {elapsed_str}";
+    }
+
+    // Lazily resolve project name for tooltip (cached per session)
+    private string? _cachedRunningProjectName;
+    private string? _cachedRunningProjectId;
+
+    private string _runningProjectId_name()
+    {
+        if (_runningProjectId == null) return "(Unassigned)";
+        if (_cachedRunningProjectId == _runningProjectId && _cachedRunningProjectName != null)
+            return _cachedRunningProjectName;
+        _cachedRunningProjectId   = _runningProjectId;
+        _cachedRunningProjectName = new ProjectRepository(_dbPath!).GetName(_runningProjectId)
+                                    ?? _runningProjectId;
+        return _cachedRunningProjectName;
     }
 
     // ── Tray / windows ───────────────────────────────────────────────────

@@ -120,6 +120,27 @@
                                     </TextBlock>
                                 </DockPanel>
 
+                                <!-- Tags row -->
+                                <ItemsControl ItemsSource="{Binding Tags}"
+                                              Visibility="{Binding TagsVisibility}"
+                                              Margin="0,4,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <WrapPanel/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
+                                                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
+                                                    BorderThickness="1" CornerRadius="3"
+                                                    Padding="5,1" Margin="0,0,4,2">
+                                                <TextBlock Text="{Binding}" FontSize="10"/>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
                                 <!-- Note row -->
                                 <TextBlock Text="{Binding Note}"
                                            Visibility="{Binding NoteVisibility}"

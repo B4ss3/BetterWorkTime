@@ -25,6 +25,7 @@ public partial class ReportsWindow : Window
         public string  Tags        { get; init; } = "";
         public string? Note        { get; init; }
         public string  IdleStr     { get; init; } = "";
+        public string  LiveStr     { get; init; } = "";
         public ReportEntryRow Source { get; init; } = null!;
     }
 
@@ -151,7 +152,7 @@ public partial class ReportsWindow : Window
             {
                 DateStr     = start.ToString("yyyy-MM-dd"),
                 StartStr    = start.ToString("HH:mm"),
-                EndStr      = end.ToString("HH:mm"),
+                EndStr      = row.IsLive ? "▶ live" : end.ToString("HH:mm"),
                 DurationStr = FormatDuration(TimeSpan.FromSeconds(row.DurationSec)),
                 ProjectName = row.ProjectName ?? "(Unassigned)",
                 TaskName    = row.TaskName ?? "",

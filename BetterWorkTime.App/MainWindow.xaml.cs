@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -24,8 +25,10 @@ public partial class MainWindow : Window
         public string? Note                { get; init; }
         public bool    IsIdle              { get; init; }
         public bool    CanSplit            { get; init; }
+        public IReadOnlyList<string> Tags  { get; init; } = Array.Empty<string>();
         public Visibility NoteVisibility   => string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
         public Visibility IdleBadgeVisibility => IsIdle ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility TagsVisibility   => Tags.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
     private const string DefaultTaskText = "Working hard...";
@@ -205,8 +208,9 @@ public partial class MainWindow : Window
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(RefreshTimeline); return; }
 
-        var entries = LoadTodayEntries();
-        var vms     = new List<TimelineEntryVm>(entries.Count);
+        var entries  = LoadTodayEntries();
+        var vms      = new List<TimelineEntryVm>(entries.Count);
+        var tagRepo  = new TagRepository(AppRef.DbPath);
 
         long workSec = 0;
         long idleSec = 0;
@@ -235,6 +239,9 @@ public partial class MainWindow : Window
                 ? (entry.TaskName != null ? $"{entry.ProjectName} / {entry.TaskName}" : entry.ProjectName)
                 : "(Unassigned)";
 
+            var tagNames = tagRepo.GetForEntry(entry.Id)
+                                   .Select(t => t.Name).ToList();
+
             vms.Add(new TimelineEntryVm
             {
                 Id        = entry.Id,
@@ -246,6 +253,7 @@ public partial class MainWindow : Window
                 Note      = entry.Note,
                 IsIdle    = entry.IsIdle,
                 CanSplit  = entry.EndUtc.HasValue,
+                Tags      = tagNames,
             });
         }
 
