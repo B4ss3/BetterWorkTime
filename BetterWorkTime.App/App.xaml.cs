@@ -115,7 +115,8 @@ public partial class App : Application
         _trayIcon = new TaskbarIcon
         {
             ToolTipText = "BetterWorkTime",
-            Icon = System.Drawing.SystemIcons.Application,
+            Icon = new System.Drawing.Icon(
+                System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "spedometer.ico")),
             ContextMenu = BuildTrayMenu()
         };
 
