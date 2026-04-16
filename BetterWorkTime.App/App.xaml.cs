@@ -4,8 +4,10 @@ using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using Hardcodet.Wpf.TaskbarNotification;
 using BetterWorkTime.Data.Sqlite;
+using BetterWorkTime.Platform.Windows;
 
 namespace BetterWorkTime.App;
 
@@ -26,6 +28,12 @@ public partial class App : Application
     private string? _runningProjectId;
     private string? _runningTaskName;
     private string? _runningNote;
+
+    // Idle detection
+    private readonly DispatcherTimer _idleTick = new() { Interval = TimeSpan.FromSeconds(1) };
+    private const int IdleThresholdSeconds = 5 * 60; // 5 min default (settings wiring in M5)
+    private bool _idlePromptShowing;
+    private long? _idleStartUtc;
 
     internal static bool IsQuitting { get; private set; }
     internal string DbPath => _dbPath!;
@@ -87,13 +95,89 @@ public partial class App : Application
         };
 
         _trayIcon.TrayLeftMouseUp += (_, __) => Dispatcher.Invoke(ToggleMainWindow);
+
+        _idleTick.Tick += OnIdleTick;
+        _idleTick.Start();
     }
 
     protected override void OnExit(ExitEventArgs e)
     {
+        _idleTick.Stop();
         _trayIcon?.Dispose();
         base.OnExit(e);
     }
+
+    // ── Idle detection ───────────────────────────────────────────────────
+
+    private void OnIdleTick(object? sender, EventArgs e)
+    {
+        if (!_isTracking || _idlePromptShowing) return;
+
+        var idleSec = IdleDetector.GetIdleSeconds();
+        if (idleSec < IdleThresholdSeconds) return;
+
+        // Capture idle start = now - how long they've been idle
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var computedIdleStart = now - idleSec;
+
+        // Clamp to running entry start — can't be idle before we started tracking
+        var idleStart = Math.Max(computedIdleStart, _runningStartUtc ?? computedIdleStart);
+
+        // Need at least 1 second of work before the idle
+        if (idleStart <= (_runningStartUtc ?? 0)) return;
+
+        _idleStartUtc = idleStart;
+        _idlePromptShowing = true;
+
+        var prompt = new IdlePromptWindow(TimeSpan.FromSeconds(idleSec));
+        prompt.Closed += (s, _) => ApplyIdleDecision(((IdlePromptWindow)s!).Choice);
+        prompt.Show();
+    }
+
+    private void ApplyIdleDecision(IdleChoice choice)
+    {
+        _idlePromptShowing = false;
+
+        if (choice == IdleChoice.Keep || !_isTracking || _idleStartUtc == null || _repo == null)
+        {
+            _idleStartUtc = null;
+            return;
+        }
+
+        var now       = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var idleStart = _idleStartUtc.Value;
+        var taskId    = ResolveTaskId(_runningProjectId, _runningTaskName);
+
+        // Trim current running entry to idle start
+        _repo.StopEntry(_runningEntryId!, idleStart);
+
+        // Create idle entry for the idle segment
+        _repo.CreateIdleEntry(idleStart, now, _runningProjectId, taskId);
+
+        _idleStartUtc = null;
+
+        if (choice == IdleChoice.Split)
+        {
+            // Resume tracking from now
+            _runningEntryId  = _repo.StartEntry(now, "manual", _runningProjectId, taskId);
+            _runningStartUtc = now;
+            _isTracking      = true;
+            PersistRunningState();
+        }
+        else // Discard — stop tracking
+        {
+            _runningEntryId  = null;
+            _runningStartUtc = null;
+            _isTracking      = false;
+            PersistStoppedState();
+        }
+
+        UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
+        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    // ── Tracking ─────────────────────────────────────────────────────────
 
     private void RestoreRuntimeState()
     {
@@ -150,8 +234,8 @@ public partial class App : Application
         {
             var taskId = ResolveTaskId(projectId, taskName);
 
-            _runningEntryId  = _repo.StartEntry(now, "manual", projectId, taskId);
-            _runningStartUtc = now;
+            _runningEntryId   = _repo.StartEntry(now, "manual", projectId, taskId);
+            _runningStartUtc  = now;
             _runningProjectId = projectId;
             _runningTaskName  = taskName;
             _runningNote      = note;
@@ -208,12 +292,12 @@ public partial class App : Application
 
         StopRunningAt(now);
 
-        _runningEntryId  = _repo!.StartEntry(now, "manual", projectId, taskId);
-        _runningStartUtc = now;
+        _runningEntryId   = _repo!.StartEntry(now, "manual", projectId, taskId);
+        _runningStartUtc  = now;
         _runningProjectId = projectId;
         _runningTaskName  = taskName;
-        _runningNote     = note;
-        _isTracking      = true;
+        _runningNote      = note;
+        _isTracking       = true;
 
         if (!string.IsNullOrWhiteSpace(note))
             _repo.UpdateNote(_runningEntryId, note);
@@ -245,12 +329,12 @@ public partial class App : Application
         if (_repo != null && _runningEntryId != null)
             _repo.StopEntry(_runningEntryId, nowUtc);
 
-        _runningEntryId = null;
-        _runningStartUtc = null;
+        _runningEntryId   = null;
+        _runningStartUtc  = null;
         _runningProjectId = null;
         _runningTaskName  = null;
         _runningNote      = null;
-        _isTracking = false;
+        _isTracking       = false;
 
         PersistStoppedState();
     }
@@ -278,6 +362,8 @@ public partial class App : Application
         if (_traySwitchTaskItem != null)
             _traySwitchTaskItem.IsEnabled = _isTracking;
     }
+
+    // ── Tray / windows ───────────────────────────────────────────────────
 
     private ContextMenu BuildTrayMenu()
     {
@@ -324,16 +410,9 @@ public partial class App : Application
 
     private void ToggleMainWindow()
     {
-        if (MainWindow == null)
-        {
-            ShowMainWindow();
-            return;
-        }
-
-        if (MainWindow.IsVisible)
-            MainWindow.Hide();
-        else
-            ShowMainWindow();
+        if (MainWindow == null) { ShowMainWindow(); return; }
+        if (MainWindow.IsVisible) MainWindow.Hide();
+        else ShowMainWindow();
     }
 
     private void ShowMainWindow()

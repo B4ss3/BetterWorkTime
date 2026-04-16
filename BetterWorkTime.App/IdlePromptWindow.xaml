@@ -1,0 +1,38 @@
+<Window x:Class="BetterWorkTime.App.IdlePromptWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Idle Detected"
+        Width="380" Height="210"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize"
+        ShowInTaskbar="True"
+        Topmost="True">
+    <DockPanel Margin="20">
+
+        <!-- Buttons pinned to bottom -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Center" Margin="0,16,0,0">
+            <Button Content="Keep" Width="96" Height="34"
+                    Click="Keep_Click" Margin="0,0,8,0"
+                    ToolTip="Count idle time as work — entry continues unchanged"/>
+            <Button Content="Discard" Width="96" Height="34"
+                    Click="Discard_Click" Margin="0,0,8,0"
+                    ToolTip="Remove idle time and stop tracking"/>
+            <Button Content="Split" Width="96" Height="34"
+                    Click="Split_Click" IsDefault="True"
+                    ToolTip="Mark idle separately and resume tracking"/>
+        </StackPanel>
+
+        <!-- Message -->
+        <StackPanel VerticalAlignment="Center">
+            <TextBlock x:Name="IdleTimeText"
+                       FontSize="22" FontWeight="SemiBold"
+                       HorizontalAlignment="Center"
+                       Margin="0,0,0,8"/>
+            <TextBlock Text="What should we do with this time?"
+                       FontSize="14" HorizontalAlignment="Center"
+                       Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"/>
+        </StackPanel>
+
+    </DockPanel>
+</Window>

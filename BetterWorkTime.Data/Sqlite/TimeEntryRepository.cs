@@ -133,6 +133,39 @@ SELECT
         cmd.ExecuteNonQuery();
     }
 
+    /// <summary>
+    /// Creates a completed idle entry for the given time range.
+    /// </summary>
+    public string CreateIdleEntry(long startUtc, long endUtc, string? projectId = null, string? taskId = null)
+    {
+        var id       = Guid.NewGuid().ToString("N");
+        var duration = endUtc > startUtc ? endUtc - startUtc : 0L;
+
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+INSERT INTO time_entries(
+    id, project_id, task_id, start_utc, end_utc, duration_sec, note, source,
+    is_idle, idle_adjusted, created_at_utc
+) VALUES (
+    $id, $projectId, $taskId, $start, $end, $duration, NULL, 'idle',
+    1, 0, $created
+);
+""";
+        cmd.Parameters.AddWithValue("$id",        id);
+        cmd.Parameters.AddWithValue("$projectId", (object?)projectId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$taskId",    (object?)taskId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$start",     startUtc);
+        cmd.Parameters.AddWithValue("$end",       endUtc);
+        cmd.Parameters.AddWithValue("$duration",  duration);
+        cmd.Parameters.AddWithValue("$created",   startUtc);
+        cmd.ExecuteNonQuery();
+
+        return id;
+    }
+
     public void UpdateProjectTask(string entryId, string? projectId, string? taskId)
     {
         using var conn = new SqliteConnection(_connectionString);

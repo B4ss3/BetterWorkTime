@@ -55,31 +55,31 @@
 ## Not started
 
 ### M1.9 — Projects / Tasks / Tags management
-- [ ] Projects CRUD:
-  - [ ] Create project (name, color)
-  - [ ] Archive / Unarchive project
-  - [ ] Simple management UI (list + add form)
-- [ ] Tasks CRUD:
-  - [ ] Create task (name, under a project or Unassigned)
-  - [ ] Archive / Unarchive task
-- [ ] Tags CRUD:
-  - [ ] Create tag (name, color)
-  - [ ] Archive / Unarchive tag
-- [ ] Today window wiring:
-  - [ ] Project dropdown populated from DB (includes Unassigned)
-  - [ ] Task dropdown scoped to selected project (includes Unassigned)
-  - [ ] Tags selector (typeahead)
-  - [ ] Note field (saved to running entry)
-  - [ ] Changing project/task while tracking triggers Switch Task flow
-- [ ] “Add Note…” tray item: update note on running entry (opens small input popup)
+- [x] Projects CRUD:
+  - [x] Create project (name, color)
+  - [x] Archive / Unarchive project
+  - [x] Simple management UI (list + add form)
+- [x] Tasks CRUD:
+  - [x] Tasks are free-text (typed inline, auto-created via FindOrCreate)
+  - [x] No separate task management UI — tasks are created on the fly per project
+- [x] Tags CRUD:
+  - [x] Create tag (name, color)
+  - [x] Archive / Unarchive tag
+- [x] Today window wiring:
+  - [x] Project dropdown populated from DB (includes Unassigned)
+  - [x] Task as free-text field (defaults to “Working hard...” when empty)
+  - [x] Tags selector (checkbox list)
+  - [x] Note field (saved to running entry on focus loss)
+  - [x] Switch Task dialog pre-populated with current project + task name
+- [x] “Add Note…” tray item: update note on running entry (opens small input popup)
 
 ### M2 — Idle handling
-- [ ] Implement Windows idle detection via `GetLastInputInfo` in `BetterWorkTime.Platform.Windows`
-- [ ] 1s tick checks idle threshold (default 5 min, from settings)
-- [ ] Idle prompt UI: Keep / Discard / Split (always-on-top)
-- [ ] Discard/Split create Idle Entry (`is_idle=true`)
-- [ ] Prevent overlaps after applying idle decision
-- [ ] Default reports exclude idle; toggle “Include idle”
+- [x] Implement Windows idle detection via `GetLastInputInfo` in `BetterWorkTime.Platform.Windows`
+- [x] 1s tick checks idle threshold (default 5 min, from settings)
+- [x] Idle prompt UI: Keep / Discard / Split (always-on-top)
+- [x] Discard/Split create Idle Entry (`is_idle=true`)
+- [x] Prevent overlaps after applying idle decision
+- [ ] Default reports exclude idle; toggle “Include idle” (deferred to M4)
 
 ### M2.5 — Today screen timeline
 - [ ] Query all time_entries for today (local day boundary)
