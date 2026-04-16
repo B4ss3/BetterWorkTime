@@ -144,15 +144,30 @@
 ### M6 — Polish + Bug fixes
 
 #### Bugs
-- [ ] **Tags lost on split** — `SplitEntry` duplicates project/task/note but not `time_entry_tags` rows; second half has no tags
-- [ ] **Tags not editable in Edit Entry dialog** — dialog shows project/task/note but tags are not displayed or preserved
-- [ ] **Project dropdown switches task while tracking** — `ProjectCombo_SelectionChanged` calls `ExecuteSwitchWithCurrentContext()` on every selection change, including accidental ones; should require explicit confirmation or only trigger on Start
-- [ ] **`IdleThresholdSeconds` reads DB on every 1s tick** — creates a new `SettingsRepository` + SQLite connection 60× per minute; cache the value and re-read only when settings are saved
+- [x] **Tags lost on split** — fixed: `SplitEntry` now copies `time_entry_tags` in the same transaction
+- [x] **Tags not editable in Edit Entry dialog** — fixed: dialog now shows tag checkboxes pre-checked from entry
+- [x] **Project dropdown switches task while tracking** — fixed: only triggers when value actually changes
+- [x] **`IdleThresholdSeconds` reads DB on every 1s tick** — fixed: cached on startup, refreshed on settings save
 
 #### UX improvements
-- [ ] **Tray icon reflects tracking state** — green icon when tracking, gray when stopped (requires a custom .ico with two states)
-- [ ] **Tray tooltip shows running entry** — e.g. `”MyProject / Task — 1h 23m”` instead of the static `”BetterWorkTime”`
-- [ ] **Quick-start from tray** — “Recent entries” submenu (last 5 distinct project/task combos) for one-click resume without opening the main window
-- [ ] **Tags shown in today's timeline** — timeline entry cards currently omit tags; show them as small chips below the time range row
-- [ ] **Reports window singleton** — opening Reports… multiple times creates duplicate windows; bring existing window to focus if already open
-- [ ] **Running entry visible in reports** — `GetEntries` filters `end_utc IS NOT NULL` so the live session never appears; show it as a “live” row with current elapsed
+- [x] **Tray icon** — custom speedometer.ico
+- [x] **Tray tooltip shows running entry** — e.g. `”MyProject / Task — 42m”`, updates every 5s
+- [x] **Quick-start from tray** — “Start Recent” submenu with last 5 project/task combos
+- [x] **Tags shown in today's timeline** — small bordered chips per entry card
+- [x] **Reports window singleton** — second click brings existing window to focus
+- [x] **Running entry visible in reports** — shows as live row with `▶ live` end time
+
+### M7 — Pre-release polish
+
+#### Functional gaps
+- [ ] **Rename projects and tags** — Manage window only supports archive; add inline rename or edit dialog
+- [ ] **"Working hard..." saved as task name** — if a project is selected and the placeholder text is never cleared, the literal string gets saved; guard needs to be consistent across all dialogs
+- [ ] **Enter key submits Add Project / Add Tag forms** — `NewProjectName` and `NewTagName` have no `KeyDown` handler for Enter; user has to click the button
+
+#### Visual polish
+- [ ] **Color column shows hex codes** — Manage window shows raw `#3B82F6` instead of a colored swatch; replace with a small colored rectangle
+- [ ] **Start/Stop button colors** — Start should be green, Stop red to make tracking state immediately obvious
+- [ ] **Elapsed hides or shows last entry duration when stopped** — showing `00:00:00` when stopped is uninformative; hide it or show duration of last completed entry
+- [ ] **Running timeline entry has no visual distinction** — live entry looks identical to finished ones; add a subtle left border accent or background tint
+- [ ] **Main window header is cramped** — four buttons + title on one 420px row; reorganize or move buttons to a toolbar row below the title
+- [ ] **Reports window can open behind main window** — uses `Show()` with `Owner` but is non-modal; may appear behind other windows; bring to front reliably on open

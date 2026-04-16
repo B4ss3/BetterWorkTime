@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using BetterWorkTime.Data.Sqlite;
 
 namespace BetterWorkTime.App;
@@ -74,6 +75,11 @@ public partial class ManageDataWindow : Window
         ProjectsGrid.ItemsSource = vms;
     }
 
+    private void NewProjectName_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) AddProject_Click(sender, e);
+    }
+
     private void AddProject_Click(object sender, RoutedEventArgs e)
     {
         var name = NewProjectName.Text.Trim();
@@ -82,6 +88,20 @@ public partial class ManageDataWindow : Window
         var color = (NewProjectColor.SelectedItem as ColorOption)?.Hex;
         _projects.Create(name, color);
         NewProjectName.Clear();
+        RefreshProjects();
+    }
+
+    private void RenameProject_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.DataContext is not ProjectVm vm) return;
+
+        var dlg = new RenameDialog(vm.Name) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        var newName = dlg.ResultName;
+        if (string.IsNullOrWhiteSpace(newName) || newName == vm.Name) return;
+
+        _projects.Rename(vm.Id, newName);
         RefreshProjects();
     }
 
@@ -102,6 +122,11 @@ public partial class ManageDataWindow : Window
         TagsGrid.ItemsSource = vms;
     }
 
+    private void NewTagName_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter) AddTag_Click(sender, e);
+    }
+
     private void AddTag_Click(object sender, RoutedEventArgs e)
     {
         var name = NewTagName.Text.Trim();
@@ -110,6 +135,20 @@ public partial class ManageDataWindow : Window
         var color = (NewTagColor.SelectedItem as ColorOption)?.Hex;
         _tags.Create(name, color);
         NewTagName.Clear();
+        RefreshTags();
+    }
+
+    private void RenameTag_Click(object sender, RoutedEventArgs e)
+    {
+        if ((sender as Button)?.DataContext is not TagVm vm) return;
+
+        var dlg = new RenameDialog(vm.Name) { Owner = this };
+        if (dlg.ShowDialog() != true) return;
+
+        var newName = dlg.ResultName;
+        if (string.IsNullOrWhiteSpace(newName) || newName == vm.Name) return;
+
+        _tags.Rename(vm.Id, newName);
         RefreshTags();
     }
 

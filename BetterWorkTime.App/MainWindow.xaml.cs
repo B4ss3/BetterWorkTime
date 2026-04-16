@@ -25,10 +25,15 @@ public partial class MainWindow : Window
         public string? Note                { get; init; }
         public bool    IsIdle              { get; init; }
         public bool    CanSplit            { get; init; }
+        public bool    IsRunning           { get; init; }
         public IReadOnlyList<string> Tags  { get; init; } = Array.Empty<string>();
         public Visibility NoteVisibility   => string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
         public Visibility IdleBadgeVisibility => IsIdle ? Visibility.Visible : Visibility.Collapsed;
         public Visibility TagsVisibility   => Tags.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Brush EntryBorderBrush      => IsRunning
+            ? new SolidColorBrush(Color.FromRgb(22, 163, 74))
+            : SystemColors.ControlDarkBrush;
+        public Thickness EntryBorderThickness => IsRunning ? new Thickness(3, 1, 1, 1) : new Thickness(1);
     }
 
     private const string DefaultTaskText = "Working hard...";
@@ -253,6 +258,7 @@ public partial class MainWindow : Window
                 Note      = entry.Note,
                 IsIdle    = entry.IsIdle,
                 CanSplit  = entry.EndUtc.HasValue,
+                IsRunning = !entry.EndUtc.HasValue,
                 Tags      = tagNames,
             });
         }
@@ -392,6 +398,10 @@ public partial class MainWindow : Window
 
         StatusText.Text            = running ? "Status: Tracking" : "Status: Stopped";
         StartStopButton.Content    = running ? "Stop" : "Start";
+        StartStopButton.Background = running
+            ? new SolidColorBrush(Color.FromRgb(220, 38, 38))   // red-600
+            : new SolidColorBrush(Color.FromRgb(22, 163, 74));  // green-600
+        StartStopButton.Foreground = Brushes.White;
         SwitchTaskButton.IsEnabled = running;
 
         if (running)

@@ -102,4 +102,16 @@ VALUES ($id, $name, $color, 0, $now);
         cmd.Parameters.AddWithValue("$id", id);
         cmd.ExecuteNonQuery();
     }
+
+    public void Rename(string id, string newName)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "UPDATE projects SET name = $name WHERE id = $id;";
+        cmd.Parameters.AddWithValue("$name", newName);
+        cmd.Parameters.AddWithValue("$id", id);
+        cmd.ExecuteNonQuery();
+    }
 }
