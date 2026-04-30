@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Extract version from tag
+        id: version
+        shell: bash
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Update version in csproj
+        shell: bash
+        run: |
+          sed -i "s|<Version>.*</Version>|<Version>${{ steps.version.outputs.VERSION }}</Version>|" \
+            BetterWorkTime.App/BetterWorkTime.App.csproj
+
+      - name: Publish
+        run: >
+          dotnet publish BetterWorkTime.App/BetterWorkTime.App.csproj
+          -c Release
+          -r win-x64
+          --self-contained
+          -o publish/
+
+      - name: Install vpk
+        run: dotnet tool install -g vpk
+
+      - name: Pack with Velopack
+        run: >
+          vpk pack
+          --packId BetterWorkTime
+          --packVersion ${{ steps.version.outputs.VERSION }}
+          --packDir publish/
+          --icon BetterWorkTime.App/spedometer.ico
+          --packTitle "BetterWorkTime"
+
+      - name: Upload to GitHub Releases
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/B4ss3/BetterWorkTime
+          --publish
+          --releaseName "${{ steps.version.outputs.VERSION }}"
+          --tag ${{ github.ref_name }}
+          --token ${{ secrets.GITHUB_TOKEN }}
