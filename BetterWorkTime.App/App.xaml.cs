@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Media;
 using System.Text.Json;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -10,6 +11,8 @@ using Hardcodet.Wpf.TaskbarNotification;
 using BetterWorkTime.Data.Sqlite;
 using BetterWorkTime.Platform.Windows;
 using Microsoft.Win32;
+using Velopack;
+using Velopack.Sources;
 
 namespace BetterWorkTime.App;
 
@@ -55,8 +58,8 @@ public partial class App : Application
     public event EventHandler? TrackingStateChanged;
     public bool IsTracking => _isTracking;
     public string? RunningProjectId => _runningProjectId;
-    public string? RunningTaskName  => _runningTaskName;
-    public string? RunningNote      => _runningNote;
+    public string? RunningTaskName => _runningTaskName;
+    public string? RunningNote => _runningNote;
 
     public TimeSpan GetElapsed()
     {
@@ -137,6 +140,46 @@ public partial class App : Application
         var settings = new SettingsRepository(_dbPath!);
         if (!settings.GetBool(SettingsWindow.KeyStartMinimized, true))
             ShowMainWindow();
+
+        _ = CheckForUpdatesAsync();
+    }
+
+    // ── Auto-update ──────────────────────────────────────────────────────
+
+    private const string GitHubUpdatesUrl = "https://github.com/B4ss3/BetterWorkTime";
+
+    private async Task CheckForUpdatesAsync()
+    {
+        try
+        {
+            var mgr = new UpdateManager(new GithubSource(GitHubUpdatesUrl, null, false));
+            if (!mgr.IsInstalled) return;
+
+            var info = await mgr.CheckForUpdatesAsync();
+            if (info == null) return;
+
+            AppLogger.Log($"Update available: {info.TargetFullRelease.Version}");
+
+            await mgr.DownloadUpdatesAsync(info);
+
+            Dispatcher.Invoke(() =>
+            {
+                var result = MessageBox.Show(
+                    $"BetterWorkTime {info.TargetFullRelease.Version} is ready to install.\n\nRestart now to apply the update?",
+                    "Update Ready",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    mgr.ApplyUpdatesAndRestart(info);
+                }
+            });
+        }
+        catch (Exception ex)
+        {
+            AppLogger.Log($"Update check failed: {ex.Message}");
+        }
     }
 
     protected override void OnExit(ExitEventArgs e)
@@ -199,9 +242,9 @@ public partial class App : Application
             return;
         }
 
-        var now       = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var idleStart = _idleStartUtc.Value;
-        var taskId    = ResolveTaskId(_runningProjectId, _runningTaskName);
+        var taskId = ResolveTaskId(_runningProjectId, _runningTaskName);
 
         // Trim current running entry to idle start
         _repo.StopEntry(_runningEntryId!, idleStart);
@@ -214,16 +257,16 @@ public partial class App : Application
         if (choice == IdleChoice.Split)
         {
             // Resume tracking from now
-            _runningEntryId  = _repo.StartEntry(now, "manual", _runningProjectId, taskId);
+            _runningEntryId = _repo.StartEntry(now, "manual", _runningProjectId, taskId);
             _runningStartUtc = now;
-            _isTracking      = true;
+            _isTracking = true;
             PersistRunningState();
         }
         else // Discard — stop tracking
         {
-            _runningEntryId  = null;
+            _runningEntryId = null;
             _runningStartUtc = null;
-            _isTracking      = false;
+            _isTracking = false;
             PersistStoppedState();
         }
 
@@ -247,8 +290,8 @@ public partial class App : Application
 
         if (!_isTracking) return;
 
-        var settings          = new SettingsRepository(_dbPath!);
-        var enabled           = settings.GetBool(SettingsWindow.KeyHydrationEnabled, false);
+        var settings = new SettingsRepository(_dbPath!);
+        var enabled = settings.GetBool(SettingsWindow.KeyHydrationEnabled, false);
         if (!enabled) return;
 
         var intervalSec = settings.GetInt(SettingsWindow.KeyHydrationInterval, 30) * 60;
@@ -263,7 +306,7 @@ public partial class App : Application
     private void ShowHydrationPrompt(SettingsRepository settings)
     {
         _hydrationPromptShowing = true;
-        _hydrationAccSec        = 0;
+        _hydrationAccSec = 0;
 
         // Play sound
         var soundPath = settings.GetString(SettingsWindow.KeyHydrationSound);
@@ -279,7 +322,7 @@ public partial class App : Application
 
     internal void ResetHydrationTimer()
     {
-        _hydrationAccSec        = 0;
+        _hydrationAccSec = 0;
         _hydrationPromptShowing = false;
     }
 
@@ -306,8 +349,8 @@ public partial class App : Application
         var lastSeenStr = _runtime?.Get("tracking.last_seen_utc");
         if (!long.TryParse(lastSeenStr, out var lastSeen) || lastSeen == 0) return;
 
-        var now     = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        var gapSec  = now - lastSeen;
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var gapSec = now - lastSeen;
         var threshold = IdleThresholdSeconds;
 
         if (gapSec < threshold) return;
@@ -318,7 +361,7 @@ public partial class App : Application
         var idleStart = Math.Max(lastSeen, _runningStartUtc ?? lastSeen);
         if (idleStart <= (_runningStartUtc ?? 0)) return;
 
-        _idleStartUtc     = idleStart;
+        _idleStartUtc = idleStart;
         _idlePromptShowing = true;
 
         Dispatcher.Invoke(() =>
@@ -338,10 +381,10 @@ public partial class App : Application
         if (enabled && _hotkeys == null)
         {
             _hotkeys = new GlobalHotkeyManager();
-            _hotkeys.StartStopPressed  += () => Dispatcher.Invoke(() => ToggleTracking());
+            _hotkeys.StartStopPressed += () => Dispatcher.Invoke(() => ToggleTracking());
             _hotkeys.SwitchTaskPressed += () => Dispatcher.Invoke(SwitchTask);
-            _hotkeys.OpenMainPressed   += () => Dispatcher.Invoke(ShowMainWindow);
-            _hotkeys.AddNotePressed    += () => Dispatcher.Invoke(OpenAddNoteDialog);
+            _hotkeys.OpenMainPressed += () => Dispatcher.Invoke(ShowMainWindow);
+            _hotkeys.AddNotePressed += () => Dispatcher.Invoke(OpenAddNoteDialog);
             _hotkeys.Register();
             AppLogger.Log("Global hotkeys registered");
         }
@@ -418,7 +461,7 @@ public partial class App : Application
         {
             var meta = _repo.GetEntryMeta(_runningEntryId);
             _runningProjectId = meta.ProjectId;
-            _runningTaskName  = meta.TaskId != null
+            _runningTaskName = meta.TaskId != null
                 ? new TaskRepository(_dbPath!).GetName(meta.TaskId)
                 : null;
             _runningNote = meta.Note;
@@ -442,14 +485,14 @@ public partial class App : Application
         {
             var taskId = ResolveTaskId(projectId, taskName);
 
-            _runningEntryId   = _repo.StartEntry(now, "manual", projectId, taskId);
-            _runningStartUtc  = now;
+            _runningEntryId = _repo.StartEntry(now, "manual", projectId, taskId);
+            _runningStartUtc = now;
             _runningProjectId = projectId;
-            _runningTaskName  = taskName;
-            _runningNote      = note;
-            _isTracking       = true;
+            _runningTaskName = taskName;
+            _runningNote = note;
+            _isTracking = true;
             _cachedRunningProjectName = null;
-            _cachedRunningProjectId   = null;
+            _cachedRunningProjectId = null;
             AppLogger.Log($"Tracking started: project={projectId ?? "none"} task={taskName ?? "none"}");
 
             if (!string.IsNullOrWhiteSpace(note))
@@ -500,17 +543,17 @@ public partial class App : Application
     private void ApplySwitch(string? projectId, string? taskName,
         IReadOnlyList<string>? tagIds, string? note)
     {
-        var now    = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var taskId = ResolveTaskId(projectId, taskName);
 
         StopRunningAt(now);
 
-        _runningEntryId   = _repo!.StartEntry(now, "manual", projectId, taskId);
-        _runningStartUtc  = now;
+        _runningEntryId = _repo!.StartEntry(now, "manual", projectId, taskId);
+        _runningStartUtc = now;
         _runningProjectId = projectId;
-        _runningTaskName  = taskName;
-        _runningNote      = note;
-        _isTracking       = true;
+        _runningTaskName = taskName;
+        _runningNote = note;
+        _isTracking = true;
 
         if (!string.IsNullOrWhiteSpace(note))
             _repo.UpdateNote(_runningEntryId, note);
@@ -548,12 +591,12 @@ public partial class App : Application
         if (_repo != null && _runningEntryId != null)
             _repo.StopEntry(_runningEntryId, nowUtc);
 
-        _runningEntryId   = null;
-        _runningStartUtc  = null;
+        _runningEntryId = null;
+        _runningStartUtc = null;
         _runningProjectId = null;
-        _runningTaskName  = null;
-        _runningNote      = null;
-        _isTracking       = false;
+        _runningTaskName = null;
+        _runningNote = null;
+        _isTracking = false;
 
         AppLogger.Log("Tracking stopped");
         PersistStoppedState();
@@ -616,7 +659,7 @@ public partial class App : Application
         if (_runningProjectId == null) return "(Unassigned)";
         if (_cachedRunningProjectId == _runningProjectId && _cachedRunningProjectName != null)
             return _cachedRunningProjectName;
-        _cachedRunningProjectId   = _runningProjectId;
+        _cachedRunningProjectId = _runningProjectId;
         _cachedRunningProjectName = new ProjectRepository(_dbPath!).GetName(_runningProjectId)
                                     ?? _runningProjectId;
         return _cachedRunningProjectName;
@@ -684,14 +727,14 @@ public partial class App : Application
         foreach (var combo in combos)
         {
             var projectLabel = combo.ProjectName ?? "(Unassigned)";
-            var taskLabel    = combo.TaskName;
-            var header       = taskLabel != null ? $"{projectLabel} / {taskLabel}" : projectLabel;
+            var taskLabel = combo.TaskName;
+            var header = taskLabel != null ? $"{projectLabel} / {taskLabel}" : projectLabel;
 
             var item = new MenuItem { Header = header };
 
             // Capture for lambda
             var projectId = combo.ProjectId;
-            var taskName  = combo.TaskName;
+            var taskName = combo.TaskName;
 
             item.Click += (_, __) =>
             {
