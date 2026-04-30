@@ -374,6 +374,8 @@ public partial class App : Application
         {
             _reportsWindow.WindowState = System.Windows.WindowState.Normal;
             _reportsWindow.Activate();
+            _reportsWindow.Topmost = true;
+            _reportsWindow.Topmost = false;
             return;
         }
 
@@ -524,10 +526,14 @@ public partial class App : Application
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    private const string DefaultTaskPlaceholder = "Working hard...";
+
     private string? ResolveTaskId(string? projectId, string? taskName)
     {
         if (projectId == null || string.IsNullOrWhiteSpace(taskName)) return null;
-        return new TaskRepository(_dbPath!).FindOrCreate(taskName.Trim(), projectId);
+        var trimmed = taskName.Trim();
+        if (trimmed == DefaultTaskPlaceholder) return null;
+        return new TaskRepository(_dbPath!).FindOrCreate(trimmed, projectId);
     }
 
     internal void UpdateRunningNote(string? note)

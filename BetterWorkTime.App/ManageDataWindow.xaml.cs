@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using BetterWorkTime.Data.Sqlite;
 
 namespace BetterWorkTime.App;
@@ -14,12 +15,21 @@ public partial class ManageDataWindow : Window
     {
         public string ArchivedLabel => Archived ? "Archived" : "Active";
         public string ToggleLabel   => Archived ? "Unarchive" : "Archive";
+        public Color ColorValue     => ParseColor(Color);
     }
 
     private sealed record TagVm(string Id, string Name, string? Color, bool Archived)
     {
         public string ArchivedLabel => Archived ? "Archived" : "Active";
         public string ToggleLabel   => Archived ? "Unarchive" : "Archive";
+        public Color ColorValue     => ParseColor(Color);
+    }
+
+    private static Color ParseColor(string? hex)
+    {
+        if (string.IsNullOrWhiteSpace(hex)) return Colors.Transparent;
+        try { return (Color)ColorConverter.ConvertFromString(hex); }
+        catch { return Colors.Transparent; }
     }
 
     private static readonly IReadOnlyList<ColorOption> ColorPresets =

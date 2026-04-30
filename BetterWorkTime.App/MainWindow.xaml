@@ -12,19 +12,18 @@
         <StackPanel Margin="16">
 
             <!-- Header -->
-            <DockPanel Margin="0,0,0,16">
+            <StackPanel Margin="0,0,0,16">
                 <TextBlock Text="BetterWorkTime" FontSize="22" FontWeight="SemiBold"
-                           VerticalAlignment="Center"/>
-                <Button Content="Settings…" DockPanel.Dock="Right"
-                        HorizontalAlignment="Right" Padding="8,4" Margin="0,0,6,0"
-                        Click="SettingsButton_Click"/>
-                <Button Content="Reports…" DockPanel.Dock="Right"
-                        HorizontalAlignment="Right" Padding="8,4" Margin="0,0,6,0"
-                        Click="ReportsButton_Click"/>
-                <Button Content="Manage…" DockPanel.Dock="Right"
-                        HorizontalAlignment="Right" Padding="8,4"
-                        Click="ManageButton_Click"/>
-            </DockPanel>
+                           Margin="0,0,0,8"/>
+                <WrapPanel>
+                    <Button Content="Manage…"   Click="ManageButton_Click"
+                            Padding="8,4" Margin="0,0,6,0"/>
+                    <Button Content="Reports…"  Click="ReportsButton_Click"
+                            Padding="8,4" Margin="0,0,6,0"/>
+                    <Button Content="Settings…" Click="SettingsButton_Click"
+                            Padding="8,4"/>
+                </WrapPanel>
+            </StackPanel>
 
             <!-- Project -->
             <TextBlock Text="Project" FontSize="13" Margin="0,0,0,4"/>

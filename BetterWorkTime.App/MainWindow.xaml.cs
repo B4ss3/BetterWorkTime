@@ -418,8 +418,25 @@ public partial class MainWindow : Window
 
     private void RefreshElapsed()
     {
-        var elapsed = AppRef.GetElapsed();
-        ElapsedText.Text = $"Elapsed: {elapsed:hh\\:mm\\:ss}";
+        if (AppRef.IsTracking)
+        {
+            var elapsed = AppRef.GetElapsed();
+            ElapsedText.Text       = $"Elapsed: {elapsed:hh\\:mm\\:ss}";
+            ElapsedText.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            var last = LoadTodayEntries().LastOrDefault(x => x.EndUtc.HasValue);
+            if (last != null)
+            {
+                ElapsedText.Text       = $"Last: {FormatDuration(TimeSpan.FromSeconds(last.DurationSec))}";
+                ElapsedText.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                ElapsedText.Visibility = Visibility.Collapsed;
+            }
+        }
     }
 
     // ── Window lifecycle ─────────────────────────────────────────────────
