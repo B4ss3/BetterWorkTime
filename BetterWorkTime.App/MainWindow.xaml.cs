@@ -36,7 +36,7 @@ public partial class MainWindow : Window
         public Thickness EntryBorderThickness => IsRunning ? new Thickness(3, 1, 1, 1) : new Thickness(1);
     }
 
-    private const string DefaultTaskText = "Working hard...";
+    private const string DefaultTaskText = "Hardly working...";
 
     private readonly DispatcherTimer _uiTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private App AppRef => (App)Application.Current;
@@ -138,6 +138,9 @@ public partial class MainWindow : Window
 
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
         => AppRef.OpenSettings();
+
+    private void HelpButton_Click(object sender, RoutedEventArgs e)
+        => AppRef.OpenHelp();
 
     private void ReportsButton_Click(object sender, RoutedEventArgs e)
         => AppRef.OpenReports();
@@ -339,10 +342,10 @@ public partial class MainWindow : Window
             ProjectCombo.SelectedIndex = 0;
     }
 
-    private string? GetTaskName()
+    private string GetTaskName()
     {
         var text = TaskNameBox.Text.Trim();
-        return (text == DefaultTaskText || string.IsNullOrEmpty(text)) ? null : text;
+        return string.IsNullOrEmpty(text) ? DefaultTaskText : text;
     }
 
     private void SetDefaultTaskText()

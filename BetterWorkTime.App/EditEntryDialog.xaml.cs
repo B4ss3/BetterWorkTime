@@ -10,7 +10,7 @@ namespace BetterWorkTime.App;
 public partial class EditEntryDialog : Window
 {
     private sealed record ProjectItem(string? Id, string Name);
-    private const string DefaultTaskText = "Working hard...";
+    private const string DefaultTaskText = "Hardly working...";
 
     private readonly string _dbPath;
     private readonly string _entryId;
@@ -127,10 +127,10 @@ public partial class EditEntryDialog : Window
         TaskBox.Foreground = SystemColors.ControlTextBrush;
     }
 
-    private string? GetTaskName()
+    private string GetTaskName()
     {
         var t = TaskBox.Text.Trim();
-        return (t == DefaultTaskText || string.IsNullOrEmpty(t)) ? null : t;
+        return string.IsNullOrEmpty(t) ? DefaultTaskText : t;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)

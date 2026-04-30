@@ -137,9 +137,30 @@ public partial class App : Application
         RefreshCachedSettings();
         ApplyHotkeySettings();
 
-        var settings = new SettingsRepository(_dbPath!);
-        if (!settings.GetBool(SettingsWindow.KeyStartMinimized, true))
+        var settings      = new SettingsRepository(_dbPath!);
+        var currentVersion = GetAppVersion();
+        var isFirstLaunch  = !settings.GetBool("app.launched_before", false);
+        var lastVersion    = settings.GetString("app.last_seen_version");
+
+        if (isFirstLaunch)
+        {
+            settings.SetBool("app.launched_before", true);
+            settings.SetString("app.last_seen_version", currentVersion);
             ShowMainWindow();
+            Dispatcher.InvokeAsync(() => OpenHelp(), System.Windows.Threading.DispatcherPriority.Background);
+        }
+        else
+        {
+            if (!settings.GetBool(SettingsWindow.KeyStartMinimized, true))
+                ShowMainWindow();
+
+            if (lastVersion != null && lastVersion != currentVersion)
+            {
+                settings.SetString("app.last_seen_version", currentVersion);
+                Dispatcher.InvokeAsync(() => OpenHelp(whatsNew: true),
+                    System.Windows.Threading.DispatcherPriority.Background);
+            }
+        }
 
         _ = CheckForUpdatesAsync();
     }
@@ -408,6 +429,33 @@ public partial class App : Application
     }
 
     private ReportsWindow? _reportsWindow;
+    private HelpWindow?   _helpWindow;
+
+    internal void OpenHelp(bool whatsNew = false)
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(() => OpenHelp(whatsNew)); return; }
+
+        if (_helpWindow != null)
+        {
+            _helpWindow.WindowState = WindowState.Normal;
+            if (whatsNew) _helpWindow.ShowWhatsNew();
+            _helpWindow.Activate();
+            _helpWindow.Topmost = true;
+            _helpWindow.Topmost = false;
+            return;
+        }
+
+        _helpWindow = new HelpWindow { Owner = MainWindow };
+        if (whatsNew) _helpWindow.ShowWhatsNew();
+        _helpWindow.Closed += (_, _) => _helpWindow = null;
+        _helpWindow.Show();
+    }
+
+    private static string GetAppVersion()
+    {
+        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        return v != null ? $"{v.Major}.{v.Minor}.{v.Build}" : "0.0.0";
+    }
 
     internal void OpenReports()
     {
@@ -569,14 +617,10 @@ public partial class App : Application
         TrackingStateChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private const string DefaultTaskPlaceholder = "Working hard...";
-
     private string? ResolveTaskId(string? projectId, string? taskName)
     {
         if (projectId == null || string.IsNullOrWhiteSpace(taskName)) return null;
-        var trimmed = taskName.Trim();
-        if (trimmed == DefaultTaskPlaceholder) return null;
-        return new TaskRepository(_dbPath!).FindOrCreate(trimmed, projectId);
+        return new TaskRepository(_dbPath!).FindOrCreate(taskName.Trim(), projectId);
     }
 
     internal void UpdateRunningNote(string? note)
@@ -761,6 +805,8 @@ public partial class App : Application
         if (dlg.ShowDialog() == true)
             UpdateRunningNote(dlg.Note);
     }
+
+    internal void BringToFront() => ShowMainWindow();
 
     private void ToggleMainWindow()
     {

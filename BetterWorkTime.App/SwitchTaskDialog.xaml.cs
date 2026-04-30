@@ -9,7 +9,7 @@ public partial class SwitchTaskDialog : Window
 {
     private sealed record ProjectItem(string? Id, string Name);
 
-    private const string DefaultTaskText = "Working hard...";
+    private const string DefaultTaskText = "Hardly working...";
 
     private readonly ProjectRepository _projects;
 
@@ -95,7 +95,7 @@ public partial class SwitchTaskDialog : Window
     {
         SelectedProjectId = (ProjectCombo.SelectedItem as ProjectItem)?.Id;
         var raw = TaskNameBox.Text.Trim();
-        SelectedTaskName = (raw == DefaultTaskText || string.IsNullOrEmpty(raw)) ? null : raw;
+        SelectedTaskName = string.IsNullOrEmpty(raw) ? DefaultTaskText : raw;
         DialogResult = true;
     }
 

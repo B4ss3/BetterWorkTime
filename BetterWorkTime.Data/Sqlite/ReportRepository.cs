@@ -181,7 +181,7 @@ WHERE te.end_utc IS NOT NULL
         if (!string.IsNullOrWhiteSpace(q.NoteSearch))
             sql.Append("  AND te.note LIKE $note\n");
 
-        sql.Append("GROUP BY te.project_id, pname\nORDER BY total DESC;");
+        sql.Append("\nGROUP BY te.project_id, pname\nORDER BY total DESC;");
 
         using var cmd = conn.CreateCommand();
         cmd.CommandText = sql.ToString();
