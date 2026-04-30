@@ -3,7 +3,14 @@ namespace BetterWorkTime.Data.Sqlite;
 internal static class DbSchema
 {
     // Schema version for future migrations
-    public const int SchemaVersion = 1;
+    public const int SchemaVersion = 2;
+
+    public const string MigrationV2 = """
+ALTER TABLE tags ADD COLUMN is_system INTEGER NOT NULL DEFAULT 0;
+""";
+
+    public const string SystemTagPauseId   = "system_tag_pause";
+    public const string SystemTagPauseName = "⏸ Pause";
 
     // Keep this as one multi-statement script (SQLite accepts this).
     public const string InitSql = """
@@ -37,6 +44,7 @@ CREATE TABLE IF NOT EXISTS tags (
     name           TEXT NOT NULL,
     color          TEXT NULL,
     archived       INTEGER NOT NULL DEFAULT 0,
+    is_system      INTEGER NOT NULL DEFAULT 0,
     created_at_utc INTEGER NOT NULL
 );
 

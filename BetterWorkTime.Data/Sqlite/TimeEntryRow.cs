@@ -16,4 +16,8 @@ public sealed record TimeEntryRow(
     string? TaskId,
     string? TaskName,
     string? Note,
-    bool    IsIdle);
+    bool    IsIdle,
+    string? Source = null)
+{
+    public bool IsPaused => Source == "pause";
+}

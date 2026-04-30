@@ -21,6 +21,7 @@ public partial class App : Application
     private TaskbarIcon? _trayIcon;
     private MenuItem? _trayStartStopItem;
     private MenuItem? _traySwitchTaskItem;
+    private MenuItem? _trayPauseResumeItem;
     private MenuItem? _trayRecentItem;
 
     private string? _dbPath;
@@ -34,6 +35,11 @@ public partial class App : Application
     private string? _runningProjectId;
     private string? _runningTaskName;
     private string? _runningNote;
+
+    private bool _isPaused;
+    private string? _pauseEntryId;
+    private IReadOnlyList<string> _pausedTagIds = Array.Empty<string>();
+    private long _pauseStartUtc;
 
     // Idle detection
     private readonly DispatcherTimer _idleTick = new() { Interval = TimeSpan.FromSeconds(1) };
@@ -57,6 +63,7 @@ public partial class App : Application
 
     public event EventHandler? TrackingStateChanged;
     public bool IsTracking => _isTracking;
+    public bool IsPaused   => _isPaused;
     public string? RunningProjectId => _runningProjectId;
     public string? RunningTaskName => _runningTaskName;
     public string? RunningNote => _runningNote;
@@ -64,6 +71,11 @@ public partial class App : Application
     public TimeSpan GetElapsed()
     {
         if (!_isTracking || _runningStartUtc is null) return TimeSpan.Zero;
+        if (_isPaused)
+        {
+            var now2 = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            return TimeSpan.FromSeconds(Math.Max(0, now2 - _pauseStartUtc));
+        }
         var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         var sec = Math.Max(0, now - _runningStartUtc.Value);
         return TimeSpan.FromSeconds(sec);
@@ -623,6 +635,71 @@ public partial class App : Application
         return new TaskRepository(_dbPath!).FindOrCreate(taskName.Trim(), projectId);
     }
 
+    internal void PauseTracking(IReadOnlyList<string>? tagIds = null)
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(() => PauseTracking(tagIds)); return; }
+        if (_repo == null || !_isTracking || _isPaused) return;
+
+        var now    = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var taskId = ResolveTaskId(_runningProjectId, _runningTaskName);
+
+        _repo.StopEntry(_runningEntryId!, now);
+        _pauseStartUtc = now;
+
+        _pauseEntryId  = _repo.StartEntry(now, "pause", _runningProjectId, taskId);
+        _pausedTagIds  = tagIds ?? Array.Empty<string>();
+
+        // Always apply the reserved system pause tag
+        var pauseTagIds = new List<string> { SystemTags.PauseId };
+        foreach (var t in _pausedTagIds) pauseTagIds.Add(t);
+        _tagRepo?.SetForEntry(_pauseEntryId, pauseTagIds);
+
+        _isPaused = true;
+        _runtime?.Set("tracking.is_paused", "true");
+        _runtime?.Set("tracking.pause_entry_id", JsonSerializer.Serialize(_pauseEntryId));
+
+        AppLogger.Log("Tracking paused");
+        UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
+        UpdateTrayTooltip();
+        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    internal void ResumeTracking()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(ResumeTracking); return; }
+        if (_repo == null || !_isTracking || !_isPaused || _pauseEntryId == null) return;
+
+        var now    = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        var taskId = ResolveTaskId(_runningProjectId, _runningTaskName);
+
+        _repo.StopEntry(_pauseEntryId, now);
+
+        _runningEntryId  = _repo.StartEntry(now, "manual", _runningProjectId, taskId);
+        _runningStartUtc = now;
+
+        if (_pausedTagIds.Count > 0)
+            _tagRepo?.SetForEntry(_runningEntryId, _pausedTagIds);
+
+        if (!string.IsNullOrWhiteSpace(_runningNote))
+            _repo.UpdateNote(_runningEntryId, _runningNote);
+
+        _pauseEntryId  = null;
+        _pausedTagIds  = Array.Empty<string>();
+        _isPaused      = false;
+        _pauseStartUtc = 0;
+
+        _runtime?.Set("tracking.is_paused", "false");
+        _runtime?.Set("tracking.pause_entry_id", "null");
+        PersistRunningState();
+
+        AppLogger.Log("Tracking resumed");
+        UpdateTrayStartStopHeader();
+        UpdateTraySwitchTaskEnabled();
+        UpdateTrayTooltip();
+        TrackingStateChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     internal void UpdateRunningNote(string? note)
     {
         if (_repo == null || _runningEntryId == null) return;
@@ -632,15 +709,23 @@ public partial class App : Application
 
     private void StopRunningAt(long nowUtc)
     {
+        if (_isPaused && _pauseEntryId != null)
+        {
+            _repo?.StopEntry(_pauseEntryId, nowUtc);
+            _pauseEntryId = null;
+            _pausedTagIds = Array.Empty<string>();
+            _isPaused = false;
+        }
+
         if (_repo != null && _runningEntryId != null)
             _repo.StopEntry(_runningEntryId, nowUtc);
 
-        _runningEntryId = null;
-        _runningStartUtc = null;
+        _runningEntryId   = null;
+        _runningStartUtc  = null;
         _runningProjectId = null;
-        _runningTaskName = null;
-        _runningNote = null;
-        _isTracking = false;
+        _runningTaskName  = null;
+        _runningNote      = null;
+        _isTracking       = false;
 
         AppLogger.Log("Tracking stopped");
         PersistStoppedState();
@@ -662,12 +747,17 @@ public partial class App : Application
     {
         if (_trayStartStopItem != null)
             _trayStartStopItem.Header = _isTracking ? "Stop" : "Start";
+        if (_trayPauseResumeItem != null)
+        {
+            _trayPauseResumeItem.IsEnabled = _isTracking;
+            _trayPauseResumeItem.Header    = _isPaused ? "Resume" : "Pause";
+        }
     }
 
     private void UpdateTraySwitchTaskEnabled()
     {
         if (_traySwitchTaskItem != null)
-            _traySwitchTaskItem.IsEnabled = _isTracking;
+            _traySwitchTaskItem.IsEnabled = _isTracking && !_isPaused;
     }
 
     private void UpdateTrayTooltip()
@@ -721,6 +811,9 @@ public partial class App : Application
         _traySwitchTaskItem = new MenuItem { Header = "Switch Task...", IsEnabled = _isTracking };
         _traySwitchTaskItem.Click += (_, __) => SwitchTask();
 
+        _trayPauseResumeItem = new MenuItem { Header = "Pause", IsEnabled = _isTracking };
+        _trayPauseResumeItem.Click += (_, __) => { if (_isPaused) ResumeTracking(); else PauseTracking(); };
+
         _trayRecentItem = new MenuItem { Header = "Start Recent" };
         RebuildRecentSubmenu();
 
@@ -741,6 +834,7 @@ public partial class App : Application
 
         menu.Items.Add(_trayStartStopItem);
         menu.Items.Add(_traySwitchTaskItem);
+        menu.Items.Add(_trayPauseResumeItem);
         menu.Items.Add(_trayRecentItem);
         menu.Items.Add(addNote);
         menu.Items.Add(new Separator());

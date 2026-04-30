@@ -34,7 +34,8 @@ SELECT te.id, te.start_utc,
        te.project_id, p.name,
        te.task_id,    t.name,
        te.note,       te.is_idle,
-       CASE WHEN te.end_utc IS NULL THEN 1 ELSE 0 END AS is_live
+       CASE WHEN te.source = 'pause' THEN 1 ELSE 0 END AS is_pause,
+       CASE WHEN te.end_utc IS NULL  THEN 1 ELSE 0 END AS is_live
 FROM time_entries te
 LEFT JOIN projects p ON te.project_id = p.id
 LEFT JOIN tasks    t ON te.task_id    = t.id
@@ -42,8 +43,13 @@ WHERE te.start_utc >= $start
   AND (te.end_utc IS NULL OR te.end_utc <= $end)
 """);
 
-        if (!q.IncludeIdle)
+        // Exclude idle and/or pauses based on flags
+        if (!q.IncludeIdle && !q.IncludePauses)
             sql.Append("  AND te.is_idle = 0\n");
+        else if (!q.IncludeIdle)
+            sql.Append("  AND (te.is_idle = 0 OR te.source = 'pause')\n");
+        else if (!q.IncludePauses)
+            sql.Append("  AND (te.is_idle = 0 OR te.source != 'pause')\n");
 
         if (q.ProjectId != null)
         {
@@ -104,7 +110,8 @@ WHERE te.start_utc >= $start
                 TaskName:    r.IsDBNull(7) ? null : r.GetString(7),
                 Note:        r.IsDBNull(8) ? null : r.GetString(8),
                 IsIdle:      r.GetInt32(9) == 1,
-                IsLive:      r.GetInt32(10) == 1,
+                IsPause:     r.GetInt32(10) == 1,
+                IsLive:      r.GetInt32(11) == 1,
                 TagNames:    Array.Empty<string>()));
         }
 

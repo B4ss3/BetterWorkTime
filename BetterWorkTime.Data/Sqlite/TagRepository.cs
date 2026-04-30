@@ -6,6 +6,11 @@ namespace BetterWorkTime.Data.Sqlite;
 
 public sealed record TagRow(string Id, string Name, string? Color, bool Archived);
 
+public static class SystemTags
+{
+    public const string PauseId = "system_tag_pause";
+}
+
 public sealed class TagRepository
 {
     private readonly string _connectionString;
@@ -28,7 +33,7 @@ public sealed class TagRepository
         conn.Open();
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT id, name FROM tags WHERE archived = 0 ORDER BY name COLLATE NOCASE;";
+        cmd.CommandText = "SELECT id, name FROM tags WHERE archived = 0 AND is_system = 0 ORDER BY name COLLATE NOCASE;";
 
         using var r = cmd.ExecuteReader();
         while (r.Read())
@@ -45,7 +50,7 @@ public sealed class TagRepository
         conn.Open();
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = "SELECT id, name, color, archived FROM tags ORDER BY archived, name COLLATE NOCASE;";
+        cmd.CommandText = "SELECT id, name, color, archived FROM tags WHERE is_system = 0 ORDER BY archived, name COLLATE NOCASE;";
 
         using var r = cmd.ExecuteReader();
         while (r.Read())
@@ -56,6 +61,18 @@ public sealed class TagRepository
                 r.GetInt32(3) == 1));
 
         return result;
+    }
+
+    /// <summary>Returns the id of the named system tag (always exists after DB init).</summary>
+    public string GetSystemTagId(string tagId)
+    {
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT id FROM tags WHERE id = $id AND is_system = 1;";
+        cmd.Parameters.AddWithValue("$id", tagId);
+        return cmd.ExecuteScalar() as string ?? tagId;
     }
 
     public IReadOnlyList<(string Id, string Name)> GetForEntry(string entryId)

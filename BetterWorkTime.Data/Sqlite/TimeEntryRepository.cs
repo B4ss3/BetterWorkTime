@@ -166,6 +166,36 @@ INSERT INTO time_entries(
         return id;
     }
 
+    public string CreatePauseEntry(long startUtc, long endUtc, string? projectId = null, string? taskId = null)
+    {
+        var id       = Guid.NewGuid().ToString("N");
+        var duration = endUtc > startUtc ? endUtc - startUtc : 0L;
+
+        using var conn = new SqliteConnection(_connectionString);
+        conn.Open();
+
+        using var cmd = conn.CreateCommand();
+        cmd.CommandText = """
+INSERT INTO time_entries(
+    id, project_id, task_id, start_utc, end_utc, duration_sec, note, source,
+    is_idle, idle_adjusted, created_at_utc
+) VALUES (
+    $id, $projectId, $taskId, $start, $end, $duration, NULL, 'pause',
+    1, 0, $created
+);
+""";
+        cmd.Parameters.AddWithValue("$id",        id);
+        cmd.Parameters.AddWithValue("$projectId", (object?)projectId ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$taskId",    (object?)taskId    ?? DBNull.Value);
+        cmd.Parameters.AddWithValue("$start",     startUtc);
+        cmd.Parameters.AddWithValue("$end",       endUtc);
+        cmd.Parameters.AddWithValue("$duration",  duration);
+        cmd.Parameters.AddWithValue("$created",   startUtc);
+        cmd.ExecuteNonQuery();
+
+        return id;
+    }
+
     public void UpdateProjectTask(string entryId, string? projectId, string? taskId)
     {
         using var conn = new SqliteConnection(_connectionString);
@@ -189,7 +219,7 @@ INSERT INTO time_entries(
 SELECT te.id, te.start_utc, te.end_utc, te.duration_sec,
        te.project_id, p.name,
        te.task_id,    t.name,
-       te.note,       te.is_idle
+       te.note,       te.is_idle, te.source
 FROM time_entries te
 LEFT JOIN projects p ON te.project_id = p.id
 LEFT JOIN tasks    t ON te.task_id    = t.id
@@ -214,7 +244,8 @@ ORDER BY te.start_utc ASC;
                 TaskId:      r.IsDBNull(6) ? null : r.GetString(6),
                 TaskName:    r.IsDBNull(7) ? null : r.GetString(7),
                 Note:        r.IsDBNull(8) ? null : r.GetString(8),
-                IsIdle:      r.GetInt32(9) == 1));
+                IsIdle:      r.GetInt32(9) == 1,
+                Source:      r.IsDBNull(10) ? null : r.GetString(10)));
         }
         return rows;
     }

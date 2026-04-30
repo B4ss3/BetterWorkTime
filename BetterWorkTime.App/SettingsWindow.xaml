@@ -1,172 +1,278 @@
 <Window x:Class="BetterWorkTime.App.SettingsWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Settings"
-        Width="440" SizeToContent="Height"
+        Title="Settings — BetterWorkTime"
+        Width="460" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False">
 
-    <DockPanel Margin="16">
+    <DockPanel>
 
-        <!-- Save / Close buttons -->
-        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
-                    HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="Save" Width="80" Height="30" IsDefault="True"
-                    Click="Save_Click" Margin="0,0,8,0"/>
-            <Button Content="Cancel" Width="80" Height="30" IsCancel="True"/>
-        </StackPanel>
+        <!-- Header -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" Padding="18,14">
+            <TextBlock Text="Settings" FontSize="16" FontWeight="Bold" Foreground="White"/>
+        </Border>
+
+        <!-- Footer buttons -->
+        <Border DockPanel.Dock="Bottom"
+                Background="#F9FAFB" BorderBrush="#E5E7EB" BorderThickness="0,1,0,0"
+                Padding="16,10">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Width="90" Height="32" IsCancel="True"
+                        Style="{StaticResource BtnOutline}" Margin="0,0,8,0"/>
+                <Button Content="Save"   Width="90" Height="32" IsDefault="True"
+                        Click="Save_Click" Style="{StaticResource BtnBlue}"/>
+            </StackPanel>
+        </Border>
 
         <TabControl>
 
-            <!-- ── General ───────────────────────────────────────── -->
+            <!-- ── General ───────────────────────────────────────────── -->
             <TabItem Header="General">
-                <StackPanel Margin="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,16">
 
-                    <CheckBox x:Name="StartMinimizedBox"
-                              Content="Start minimized to tray"
-                              FontSize="13" Margin="0,0,0,14"/>
+                        <!-- Startup card -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Startup" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
+                                <CheckBox x:Name="StartMinimizedBox"
+                                          Content="Start minimized to tray"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Separator Margin="0,0,0,14"/>
+                        <!-- Hotkeys card -->
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Global hotkeys  (Ctrl+Alt+…)" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
+                                <CheckBox x:Name="HotkeysEnabledBox"
+                                          Content="Enable global hotkeys"
+                                          Margin="0,0,0,12"/>
+                                <Border Background="{StaticResource AccentSubtleBrush}"
+                                        BorderBrush="{StaticResource AccentLightBrush}"
+                                        BorderThickness="1" CornerRadius="4" Padding="10,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                                        </Grid.RowDefinitions>
+                                        <Border Grid.Row="0" Grid.Column="0" Background="{StaticResource AccentLightBrush}"
+                                                CornerRadius="3" Padding="6,2" Margin="0,2,12,2">
+                                            <TextBlock Text="Ctrl+Alt+S" FontFamily="Consolas" FontSize="11"
+                                                       Foreground="{StaticResource AccentBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="Start / Stop"
+                                                   VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <Border Grid.Row="1" Grid.Column="0" Background="{StaticResource AccentLightBrush}"
+                                                CornerRadius="3" Padding="6,2" Margin="0,2,12,2">
+                                            <TextBlock Text="Ctrl+Alt+T" FontFamily="Consolas" FontSize="11"
+                                                       Foreground="{StaticResource AccentBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="Switch Task"
+                                                   VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <Border Grid.Row="2" Grid.Column="0" Background="{StaticResource AccentLightBrush}"
+                                                CornerRadius="3" Padding="6,2" Margin="0,2,12,2">
+                                            <TextBlock Text="Ctrl+Alt+O" FontFamily="Consolas" FontSize="11"
+                                                       Foreground="{StaticResource AccentBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="Open main window"
+                                                   VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                        <Border Grid.Row="3" Grid.Column="0" Background="{StaticResource AccentLightBrush}"
+                                                CornerRadius="3" Padding="6,2" Margin="0,2,12,2">
+                                            <TextBlock Text="Ctrl+Alt+N" FontFamily="Consolas" FontSize="11"
+                                                       Foreground="{StaticResource AccentBrush}"/>
+                                        </Border>
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="Add Note"
+                                                   VerticalAlignment="Center" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
 
-                    <TextBlock Text="Global hotkeys (Ctrl+Alt+…)"
-                               FontSize="13" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                    <CheckBox x:Name="HotkeysEnabledBox"
-                              Content="Enable global hotkeys"
-                              FontSize="13" Margin="0,0,0,8"/>
-                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
-                        <Run Text="S"/>
-                        <Run Text=" — Start / Stop"/>
-                    </TextBlock>
-                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
-                        <Run Text="T"/>
-                        <Run Text=" — Switch Task"/>
-                    </TextBlock>
-                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
-                        <Run Text="O"/>
-                        <Run Text=" — Open main window"/>
-                    </TextBlock>
-                    <TextBlock FontSize="11" Foreground="Gray" Margin="0,0,0,4">
-                        <Run Text="N"/>
-                        <Run Text=" — Add Note"/>
-                    </TextBlock>
+                        <!-- Data card -->
+                        <Border Style="{StaticResource Card}" Margin="0">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Data" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
+                                <Button Content="Open data folder"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource BtnOutline}" Padding="10,6"
+                                        Click="OpenDataFolder_Click"/>
+                            </StackPanel>
+                        </Border>
 
-                    <Separator Margin="0,14,0,14"/>
-
-                    <Button Content="Open data folder"
-                            HorizontalAlignment="Left" Padding="10,5"
-                            Click="OpenDataFolder_Click"/>
-
-                </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
-            <!-- ── Tracking ─────────────────────────────────────── -->
+            <!-- ── Tracking ──────────────────────────────────────────── -->
             <TabItem Header="Tracking">
-                <StackPanel Margin="12">
-
-                    <TextBlock Text="Idle threshold" FontSize="13" Margin="0,0,0,6"/>
-                    <DockPanel Margin="0,0,0,4">
-                        <TextBlock Text="minutes" DockPanel.Dock="Right"
-                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <TextBox x:Name="IdleThresholdBox" Width="60"
-                                 HorizontalAlignment="Left" FontSize="13"/>
-                    </DockPanel>
-                    <TextBlock Text="How long the computer must be idle before a prompt appears."
-                               FontSize="11" Foreground="Gray" TextWrapping="Wrap"
-                               Margin="0,4,0,0"/>
-
-                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,16">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Idle detection" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
+                                <TextBlock Text="IDLE THRESHOLD" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel>
+                                    <TextBlock Text="minutes" DockPanel.Dock="Right"
+                                               VerticalAlignment="Center" Margin="8,0,0,0"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBox x:Name="IdleThresholdBox" Width="70"
+                                             HorizontalAlignment="Left"/>
+                                </DockPanel>
+                                <TextBlock Margin="0,6,0,0" Style="{StaticResource MutedText}">
+                                    How long the computer must be idle before a prompt appears.
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
-            <!-- ── Hydration ─────────────────────────────────────── -->
+            <!-- ── Hydration ─────────────────────────────────────────── -->
             <TabItem Header="Hydration">
-                <StackPanel Margin="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,16">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Hydration reminders" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
 
-                    <CheckBox x:Name="HydrationEnabledBox"
-                              Content="Enable hydration reminders"
-                              FontSize="13" Margin="0,0,0,14"
-                              Checked="HydrationEnabled_Changed"
-                              Unchecked="HydrationEnabled_Changed"/>
+                                <CheckBox x:Name="HydrationEnabledBox"
+                                          Content="Enable hydration reminders"
+                                          Margin="0,0,0,14"
+                                          Checked="HydrationEnabled_Changed"
+                                          Unchecked="HydrationEnabled_Changed"/>
 
-                    <TextBlock Text="Reminder interval" FontSize="13" Margin="0,0,0,6"/>
-                    <DockPanel Margin="0,0,0,16">
-                        <TextBlock Text="minutes" DockPanel.Dock="Right"
-                                   VerticalAlignment="Center" Margin="8,0,0,0"/>
-                        <TextBox x:Name="HydrationIntervalBox" Width="60"
-                                 HorizontalAlignment="Left" FontSize="13"/>
-                    </DockPanel>
+                                <TextBlock Text="INTERVAL" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel Margin="0,0,0,14">
+                                    <TextBlock Text="minutes" DockPanel.Dock="Right"
+                                               VerticalAlignment="Center" Margin="8,0,0,0"
+                                               Foreground="{StaticResource TextSecondaryBrush}"/>
+                                    <TextBox x:Name="HydrationIntervalBox" Width="70"
+                                             HorizontalAlignment="Left"/>
+                                </DockPanel>
 
-                    <TextBlock Text="Sound" FontSize="13" Margin="0,0,0,6"/>
-                    <DockPanel Margin="0,0,0,6">
-                        <Button Content="▶ Preview" DockPanel.Dock="Right"
-                                Padding="8,4" Margin="8,0,0,0"
-                                Click="PreviewSound_Click"/>
-                        <ComboBox x:Name="SoundCombo"
-                                  DisplayMemberPath="Label"
-                                  SelectionChanged="SoundCombo_SelectionChanged"/>
-                    </DockPanel>
-                    <Button Content="Browse for custom sound…"
-                            HorizontalAlignment="Left" Padding="8,4"
-                            Margin="0,0,0,4"
-                            Click="BrowseSound_Click"/>
-                    <TextBlock x:Name="CustomSoundLabel"
-                               FontSize="11" Foreground="Gray"
-                               TextTrimming="CharacterEllipsis"
-                               Visibility="Collapsed"/>
+                                <TextBlock Text="SOUND" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <Button Content="▶ Preview" DockPanel.Dock="Right"
+                                            Style="{StaticResource BtnOutline}"
+                                            Padding="8,5" Margin="8,0,0,0"
+                                            Click="PreviewSound_Click"/>
+                                    <ComboBox x:Name="SoundCombo"
+                                              DisplayMemberPath="Label"
+                                              SelectionChanged="SoundCombo_SelectionChanged"/>
+                                </DockPanel>
+                                <Button Content="Browse for custom sound…"
+                                        HorizontalAlignment="Left"
+                                        Style="{StaticResource BtnOutline}" Padding="8,5"
+                                        Margin="0,0,0,6"
+                                        Click="BrowseSound_Click"/>
+                                <TextBlock x:Name="CustomSoundLabel"
+                                           Style="{StaticResource MutedText}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Visibility="Collapsed"
+                                           Margin="0,0,0,12"/>
 
-                    <Separator Margin="0,12,0,12"/>
+                                <Separator/>
 
-                    <CheckBox x:Name="RespectFocusAssistBox" FontSize="12">
-                        <TextBlock Text="Respect Focus Assist (delay reminder while active)"
-                                   TextWrapping="Wrap"/>
-                    </CheckBox>
-
-                </StackPanel>
+                                <CheckBox x:Name="RespectFocusAssistBox">
+                                    <TextBlock Text="Respect Focus Assist (delay reminder while active)"
+                                               TextWrapping="Wrap" Foreground="{StaticResource TextPrimaryBrush}"/>
+                                </CheckBox>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
-            <!-- ── Export ────────────────────────────────────────── -->
+            <!-- ── Export ────────────────────────────────────────────── -->
             <TabItem Header="Export">
-                <StackPanel Margin="12">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,16">
+                        <Border Style="{StaticResource Card}">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,12">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="CSV export" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
 
-                    <CheckBox x:Name="OpenFolderAfterExportBox"
-                              Content="Open folder after export"
-                              FontSize="13" Margin="0,0,0,14"/>
+                                <CheckBox x:Name="OpenFolderAfterExportBox"
+                                          Content="Open folder after export"
+                                          Margin="0,0,0,14"/>
 
-                    <TextBlock Text="Last export folder" FontSize="13" Margin="0,0,0,6"/>
-                    <DockPanel Margin="0,0,0,4">
-                        <Button Content="Clear" DockPanel.Dock="Right"
-                                Padding="8,4" Margin="8,0,0,0"
-                                Click="ClearExportFolder_Click"/>
-                        <TextBlock x:Name="LastExportFolderText"
-                                   FontSize="12" Foreground="Gray"
-                                   VerticalAlignment="Center"
-                                   TextTrimming="CharacterEllipsis"/>
-                    </DockPanel>
-
-                </StackPanel>
+                                <TextBlock Text="LAST EXPORT FOLDER" Style="{StaticResource FieldLabel}"/>
+                                <DockPanel>
+                                    <Button Content="Clear" DockPanel.Dock="Right"
+                                            Style="{StaticResource BtnOutline}" Padding="8,5" Margin="8,0,0,0"
+                                            Click="ClearExportFolder_Click"/>
+                                    <TextBlock x:Name="LastExportFolderText"
+                                               FontSize="12" Foreground="{StaticResource TextMutedBrush}"
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
-            <!-- ── About ─────────────────────────────────────────── -->
+            <!-- ── About ─────────────────────────────────────────────── -->
             <TabItem Header="About">
-                <StackPanel Margin="12">
-
-                    <TextBlock Text="BetterWorkTime" FontSize="16" FontWeight="SemiBold"
-                               Margin="0,0,0,4"/>
-                    <TextBlock x:Name="VersionText" FontSize="13" Foreground="Gray"
-                               Margin="0,0,0,16"/>
-
-                    <Button Content="Open logs folder"
-                            HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,8"
-                            Click="OpenLogsFolder_Click"/>
-
-                    <Button Content="Open data folder"
-                            HorizontalAlignment="Left" Padding="10,5"
-                            Click="OpenDataFolder_Click"/>
-
-                </StackPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="16,14,16,16">
+                        <Border Background="{StaticResource HeaderBrush}" CornerRadius="8" Padding="16,14" Margin="0,0,0,12">
+                            <StackPanel>
+                                <TextBlock Text="BetterWorkTime"
+                                           FontSize="16" FontWeight="Bold" Foreground="White"/>
+                                <TextBlock x:Name="VersionText"
+                                           FontSize="12" Foreground="#BFDBFE" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Card}" Margin="0">
+                            <StackPanel>
+                                <DockPanel Margin="0,0,0,10">
+                                    <Border Background="{StaticResource AccentBrush}"
+                                            Width="4" CornerRadius="2" Margin="0,0,10,0"/>
+                                    <TextBlock Text="Diagnostics" Style="{StaticResource CardTitle}"/>
+                                </DockPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Content="Open logs folder"
+                                            Style="{StaticResource BtnOutline}" Padding="10,6" Margin="0,0,8,0"
+                                            Click="OpenLogsFolder_Click"/>
+                                    <Button Content="Open data folder"
+                                            Style="{StaticResource BtnOutline}" Padding="10,6"
+                                            Click="OpenDataFolder_Click"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
         </TabControl>
-
     </DockPanel>
 </Window>

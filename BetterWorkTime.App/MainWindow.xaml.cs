@@ -24,16 +24,20 @@ public partial class MainWindow : Window
         public string  Label               { get; init; } = "";
         public string? Note                { get; init; }
         public bool    IsIdle              { get; init; }
+        public bool    IsPaused            { get; init; }
         public bool    CanSplit            { get; init; }
         public bool    IsRunning           { get; init; }
         public IReadOnlyList<string> Tags  { get; init; } = Array.Empty<string>();
-        public Visibility NoteVisibility   => string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
-        public Visibility IdleBadgeVisibility => IsIdle ? Visibility.Visible : Visibility.Collapsed;
-        public Visibility TagsVisibility   => Tags.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility NoteVisibility        => string.IsNullOrWhiteSpace(Note) ? Visibility.Collapsed : Visibility.Visible;
+        public Visibility IdleBadgeVisibility   => IsIdle && !IsPaused ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility PausedBadgeVisibility => IsPaused ? Visibility.Visible : Visibility.Collapsed;
+        public Visibility TagsVisibility        => Tags.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         public Brush EntryBorderBrush      => IsRunning
             ? new SolidColorBrush(Color.FromRgb(22, 163, 74))
-            : SystemColors.ControlDarkBrush;
-        public Thickness EntryBorderThickness => IsRunning ? new Thickness(3, 1, 1, 1) : new Thickness(1);
+            : IsPaused
+                ? new SolidColorBrush(Color.FromRgb(139, 92, 246))
+                : SystemColors.ControlDarkBrush;
+        public Thickness EntryBorderThickness => (IsRunning || IsPaused) ? new Thickness(3, 1, 1, 1) : new Thickness(1);
     }
 
     private const string DefaultTaskText = "Hardly working...";
@@ -117,6 +121,17 @@ public partial class MainWindow : Window
         {
             AppRef.ToggleTracking();
         }
+
+        RefreshUi();
+        RefreshTimeline();
+    }
+
+    private void PauseResumeButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (AppRef.IsPaused)
+            AppRef.ResumeTracking();
+        else
+            AppRef.PauseTracking(GetSelectedTagIds());
 
         RefreshUi();
         RefreshTimeline();
@@ -216,7 +231,7 @@ public partial class MainWindow : Window
     {
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(RefreshTimeline); return; }
 
-        var entries  = LoadTodayEntries();
+        var entries  = LoadTodayEntries().Reverse().ToList();
         var vms      = new List<TimelineEntryVm>(entries.Count);
         var tagRepo  = new TagRepository(AppRef.DbPath);
 
@@ -261,7 +276,8 @@ public partial class MainWindow : Window
                 Note      = entry.Note,
                 IsIdle    = entry.IsIdle,
                 CanSplit  = entry.EndUtc.HasValue,
-                IsRunning = !entry.EndUtc.HasValue,
+                IsRunning = !entry.EndUtc.HasValue && !entry.IsPaused,
+                IsPaused  = entry.IsPaused,
                 Tags      = tagNames,
             });
         }
@@ -398,14 +414,24 @@ public partial class MainWindow : Window
     private void RefreshUi()
     {
         var running = AppRef.IsTracking;
+        var paused  = AppRef.IsPaused;
 
-        StatusText.Text            = running ? "Status: Tracking" : "Status: Stopped";
+        StatusText.Text = running
+            ? (paused ? "⏸  Paused" : "● Tracking")
+            : "Stopped";
+
         StartStopButton.Content    = running ? "Stop" : "Start";
         StartStopButton.Background = running
-            ? new SolidColorBrush(Color.FromRgb(220, 38, 38))   // red-600
-            : new SolidColorBrush(Color.FromRgb(22, 163, 74));  // green-600
-        StartStopButton.Foreground = Brushes.White;
-        SwitchTaskButton.IsEnabled = running;
+            ? new SolidColorBrush(Color.FromRgb(220, 38, 38))
+            : new SolidColorBrush(Color.FromRgb(22, 163, 74));
+
+        PauseResumeButton.Content    = paused ? "Resume" : "Pause";
+        PauseResumeButton.IsEnabled  = running;
+        PauseResumeButton.Background = paused
+            ? new SolidColorBrush(Color.FromRgb(22, 163, 74))
+            : new SolidColorBrush(Color.FromRgb(139, 92, 246));
+
+        SwitchTaskButton.IsEnabled = running && !paused;
 
         if (running)
         {
@@ -424,7 +450,10 @@ public partial class MainWindow : Window
         if (AppRef.IsTracking)
         {
             var elapsed = AppRef.GetElapsed();
-            ElapsedText.Text       = $"Elapsed: {elapsed:hh\\:mm\\:ss}";
+            ElapsedText.Text       = elapsed.ToString(@"hh\:mm\:ss");
+            ElapsedText.Foreground = AppRef.IsPaused
+                ? new SolidColorBrush(Color.FromRgb(139, 92, 246))
+                : new SolidColorBrush(Color.FromRgb(29, 78, 216));
             ElapsedText.Visibility = Visibility.Visible;
         }
         else
@@ -432,12 +461,15 @@ public partial class MainWindow : Window
             var last = LoadTodayEntries().LastOrDefault(x => x.EndUtc.HasValue);
             if (last != null)
             {
-                ElapsedText.Text       = $"Last: {FormatDuration(TimeSpan.FromSeconds(last.DurationSec))}";
+                ElapsedText.Text       = FormatDuration(TimeSpan.FromSeconds(last.DurationSec));
+                ElapsedText.Foreground = new SolidColorBrush(Color.FromRgb(156, 163, 175));
                 ElapsedText.Visibility = Visibility.Visible;
             }
             else
             {
-                ElapsedText.Visibility = Visibility.Collapsed;
+                ElapsedText.Text       = "00:00:00";
+                ElapsedText.Foreground = new SolidColorBrush(Color.FromRgb(209, 213, 219));
+                ElapsedText.Visibility = Visibility.Visible;
             }
         }
     }

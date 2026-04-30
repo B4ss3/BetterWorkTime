@@ -11,6 +11,7 @@ public sealed class ReportQuery
     public string? ProjectId    { get; init; }   // null = all; empty string = unassigned
     public string? NoteSearch   { get; init; }
     public bool   IncludeIdle   { get; init; } = false;
+    public bool   IncludePauses { get; init; } = false;
     public IReadOnlyList<string> TagIds { get; init; } = Array.Empty<string>();
 }
 
@@ -26,6 +27,7 @@ public sealed record ReportEntryRow(
     string? TaskName,
     string? Note,
     bool    IsIdle,
+    bool    IsPause,
     bool    IsLive,
     IReadOnlyList<string> TagNames);
 
