@@ -267,7 +267,7 @@ public partial class ReportsView : UserControl
         {
             Title      = "Export CSV",
             Filter     = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
-            FileName   = $"BetterWorkTime_{DateTime.Today:yyyy-MM-dd}.csv",
+            FileName   = $"Tuntio_{DateTime.Today:yyyy-MM-dd}.csv",
         };
 
         if (dlg.ShowDialog(Window.GetWindow(this)) != true) return;

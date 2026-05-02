@@ -1,0 +1,48 @@
+[
+  {
+    "version": "0.9.0",
+    "date": "2026-05-02",
+    "changes": [
+      { "type": "added",   "text": "Dashboard view with daily hours bar chart and project breakdown" },
+      { "type": "added",   "text": "Pie / Bar toggle on project breakdown chart" },
+      { "type": "added",   "text": "Drill-down: click a project to see task breakdown inside it" },
+      { "type": "added",   "text": "Consistent bar ordering — same project always in same position each day" },
+      { "type": "added",   "text": "Changelog system — What's New tab now shows structured release notes" },
+      { "type": "changed", "text": "Single-window navigation — Dashboard, Reports, Manage and Settings now live inside the main window instead of opening separate windows" },
+      { "type": "changed", "text": "Nav order: Timer → Reports → Dashboard → Manage → Settings" },
+      { "type": "changed", "text": "App renamed to Tuntio" },
+      { "type": "fixed",   "text": "Status column in Manage not centering correctly" }
+    ]
+  },
+  {
+    "version": "0.8.0",
+    "date": "2026-04-20",
+    "changes": [
+      { "type": "added",   "text": "Pause tracking — pause button creates a logged pause entry" },
+      { "type": "added",   "text": "Automatic ⏸ Pause system tag applied to all pause entries" },
+      { "type": "added",   "text": "Include Pauses checkbox in Reports filter bar" },
+      { "type": "added",   "text": "Paused row in By Project breakdown" },
+      { "type": "added",   "text": "Timeline chart in Reports — horizontal blocks per day coloured by project" },
+      { "type": "added",   "text": "Pause timer resets to 0 and counts up so you can see break length" },
+      { "type": "changed", "text": "Full UI overhaul — muted colour palette, card layouts, visible button borders" },
+      { "type": "changed", "text": "Today timeline now shows newest entry at the top" },
+      { "type": "fixed",   "text": "Timer continued running visually while paused" },
+      { "type": "fixed",   "text": "Overflow at the bottom of the main window" }
+    ]
+  },
+  {
+    "version": "0.1.0",
+    "date": "2026-04-01",
+    "changes": [
+      { "type": "added", "text": "Time tracking with projects, tasks and tags" },
+      { "type": "added", "text": "Idle detection with Keep / Discard / Split options" },
+      { "type": "added", "text": "Today's timeline with edit, split and delete actions" },
+      { "type": "added", "text": "Reports with date filters, project breakdown and CSV export" },
+      { "type": "added", "text": "Hydration reminders with custom sound" },
+      { "type": "added", "text": "Sleep / wake detection — idle prompt on resume" },
+      { "type": "added", "text": "Global hotkeys (Ctrl+Alt+S / T / O / N)" },
+      { "type": "added", "text": "Rotating logs and crash recovery" },
+      { "type": "added", "text": "Auto-updates via GitHub Releases" }
+    ]
+  }
+]

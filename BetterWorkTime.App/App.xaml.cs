@@ -130,7 +130,7 @@ public partial class App : Application
 
         _trayIcon = new TaskbarIcon
         {
-            ToolTipText = "BetterWorkTime",
+            ToolTipText = "Tuntio",
             Icon = new System.Drawing.Icon(
                 System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "spedometer.ico")),
             ContextMenu = BuildTrayMenu()
@@ -198,7 +198,7 @@ public partial class App : Application
             Dispatcher.Invoke(() =>
             {
                 var result = MessageBox.Show(
-                    $"BetterWorkTime {info.TargetFullRelease.Version} is ready to install.\n\nRestart now to apply the update?",
+                    $"Tuntio {info.TargetFullRelease.Version} is ready to install.\n\nRestart now to apply the update?",
                     "Update Ready",
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
@@ -766,7 +766,7 @@ public partial class App : Application
 
         if (!_isTracking)
         {
-            _trayIcon.ToolTipText = "BetterWorkTime — Stopped";
+            _trayIcon.ToolTipText = "Tuntio — Stopped";
             return;
         }
 
@@ -820,7 +820,7 @@ public partial class App : Application
         var addNote = new MenuItem { Header = "Add Note..." };
         addNote.Click += (_, __) => OpenAddNoteDialog();
 
-        var open = new MenuItem { Header = "Open BetterWorkTime" };
+        var open = new MenuItem { Header = "Open Tuntio" };
         open.Click += (_, __) => Dispatcher.Invoke(ShowMainWindow);
 
         var reports = new MenuItem { Header = "Reports…" };
@@ -891,7 +891,7 @@ public partial class App : Application
         if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenAddNoteDialog); return; }
         if (!_isTracking)
         {
-            MessageBox.Show("Start tracking first to add a note.", "BetterWorkTime");
+            MessageBox.Show("Start tracking first to add a note.", "Tuntio");
             return;
         }
 

@@ -52,6 +52,13 @@
                                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment"   Value="Center"/>
+                                <Setter Property="BorderThickness"            Value="0"/>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="NAME"  Binding="{Binding Name}" Width="*"
                                                 ElementStyle="{StaticResource {x:Type TextBlock}}"/>
@@ -147,6 +154,13 @@
                                 <Setter Property="BorderThickness" Value="0,0,0,1"/>
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="DataGridCell">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="VerticalContentAlignment"   Value="Center"/>
+                                <Setter Property="BorderThickness"            Value="0"/>
+                            </Style>
+                        </DataGrid.CellStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="NAME"  Binding="{Binding Name}" Width="*"/>
                             <DataGridTemplateColumn Header="COLOR" Width="64">

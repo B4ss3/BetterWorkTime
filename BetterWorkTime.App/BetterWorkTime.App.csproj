@@ -21,7 +21,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="spedometer.ico" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="spedometer.ico"  CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="changelog.json"  CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

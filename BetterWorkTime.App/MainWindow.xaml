@@ -5,7 +5,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="BetterWorkTime" Height="720" Width="960"
+        Title="Tuntio" Height="720" Width="960"
         MinHeight="520" MinWidth="640">
 
     <DockPanel>
@@ -21,14 +21,11 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
 
-                <!-- Left: logo + status badge -->
+                <!-- Left: status badge only -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal"
                             VerticalAlignment="Center" Margin="18,0,0,0">
-                    <TextBlock Text="BetterWorkTime"
-                               FontSize="16" FontWeight="SemiBold" Foreground="White"
-                               VerticalAlignment="Center"/>
                     <Border x:Name="StatusBadge" CornerRadius="4" Padding="7,3"
-                            Margin="10,0,0,0" VerticalAlignment="Center"
+                            VerticalAlignment="Center"
                             Visibility="Collapsed">
                         <TextBlock x:Name="StatusBadgeText" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
                     </Border>
@@ -38,9 +35,9 @@
                 <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
                     <Button x:Name="NavTimer"     Content="Timer"     Tag="Timer"
                             Click="NavButton_Click" Style="{StaticResource BtnNav}" Margin="2,0"/>
-                    <Button x:Name="NavDashboard" Content="Dashboard" Tag="Dashboard"
-                            Click="NavButton_Click" Style="{StaticResource BtnNav}" Margin="2,0"/>
                     <Button x:Name="NavReports"   Content="Reports"   Tag="Reports"
+                            Click="NavButton_Click" Style="{StaticResource BtnNav}" Margin="2,0"/>
+                    <Button x:Name="NavDashboard" Content="Dashboard" Tag="Dashboard"
                             Click="NavButton_Click" Style="{StaticResource BtnNav}" Margin="2,0"/>
                     <Button x:Name="NavManage"    Content="Manage"    Tag="Manage"
                             Click="NavButton_Click" Style="{StaticResource BtnNav}" Margin="2,0"/>

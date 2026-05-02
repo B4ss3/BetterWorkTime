@@ -134,10 +134,10 @@ public partial class SettingsView : UserControl
         var path = GetSelectedSoundPath();
         if (path == null || !File.Exists(path))
         {
-            MessageBox.Show("Sound file not found.", "BetterWorkTime"); return;
+            MessageBox.Show("Sound file not found.", "Tuntio"); return;
         }
         try { using var player = new SoundPlayer(path); player.Play(); }
-        catch (Exception ex) { MessageBox.Show($"Could not play sound: {ex.Message}", "BetterWorkTime"); }
+        catch (Exception ex) { MessageBox.Show($"Could not play sound: {ex.Message}", "Tuntio"); }
     }
 
     private void OpenDataFolder_Click(object sender, RoutedEventArgs e)
@@ -153,7 +153,7 @@ public partial class SettingsView : UserControl
         if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
             Process.Start("explorer.exe", dir);
         else
-            MessageBox.Show("Logs folder not found.", "BetterWorkTime");
+            MessageBox.Show("Logs folder not found.", "Tuntio");
     }
 
     private void ClearExportFolder_Click(object sender, RoutedEventArgs e)
