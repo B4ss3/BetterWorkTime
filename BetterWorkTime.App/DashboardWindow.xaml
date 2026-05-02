@@ -1,0 +1,145 @@
+<Window x:Class="BetterWorkTime.App.DashboardWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Dashboard — BetterWorkTime"
+        Width="960" Height="680"
+        MinWidth="720" MinHeight="500"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+
+    <DockPanel>
+
+        <!-- ── Header ───────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top" Background="{StaticResource HeaderBrush}" Padding="18,12">
+            <DockPanel>
+                <WrapPanel DockPanel.Dock="Right" VerticalAlignment="Center">
+                    <!-- Period nav -->
+                    <Button Content="←" Click="PrevPeriod_Click"
+                            Style="{StaticResource BtnHeaderOutline}"
+                            Padding="8,5" Margin="0,0,4,0" FontFamily="Segoe UI"/>
+                    <Button Content="→" Click="NextPeriod_Click"
+                            Style="{StaticResource BtnHeaderOutline}"
+                            Padding="8,5" Margin="0,0,10,0" FontFamily="Segoe UI"/>
+                    <ComboBox x:Name="PeriodCombo" Width="130" VerticalAlignment="Center"
+                              SelectionChanged="PeriodCombo_SelectionChanged"
+                              Margin="0,0,10,0"/>
+                    <Button Content="← Timer" Click="BackToTimer_Click"
+                            Style="{StaticResource BtnHeaderOutline}"
+                            Padding="10,5"/>
+                </WrapPanel>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Dashboard" FontSize="17" FontWeight="SemiBold" Foreground="White"/>
+                    <TextBlock x:Name="PeriodLabel" FontSize="11.5" Foreground="#8898AA" Margin="0,2,0,0"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Summary cards row ────────────────────────────────────── -->
+        <UniformGrid DockPanel.Dock="Top" Columns="4"
+                     Background="{StaticResource PageBgBrush}"
+                     Margin="18,14,18,0">
+            <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="TOTAL TIME" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock x:Name="CardTotal" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource AccentBrush}" Margin="0,4,0,0"/>
+                    <TextBlock x:Name="CardTotalSub" FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="AVG PER DAY" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock x:Name="CardAvg" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource GreenBrush}" Margin="0,4,0,0"/>
+                    <TextBlock x:Name="CardAvgSub" FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}" Margin="0,0,10,0">
+                <StackPanel>
+                    <TextBlock Text="TOP PROJECT" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock x:Name="CardTopProject" FontSize="16" FontWeight="Bold"
+                               Foreground="{StaticResource TextPrimaryBrush}" Margin="0,4,0,0"
+                               TextTrimming="CharacterEllipsis"/>
+                    <TextBlock x:Name="CardTopProjectSub" FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <TextBlock Text="DAYS WORKED" Style="{StaticResource FieldLabel}"/>
+                    <TextBlock x:Name="CardDays" FontSize="22" FontWeight="Bold"
+                               Foreground="{StaticResource PurpleBrush}" Margin="0,4,0,0"/>
+                    <TextBlock x:Name="CardDaysSub" FontSize="11"
+                               Foreground="{StaticResource TextMutedBrush}" Margin="0,2,0,0"/>
+                </StackPanel>
+            </Border>
+        </UniformGrid>
+
+        <!-- ── Main charts area ─────────────────────────────────────── -->
+        <Grid Margin="18,12,18,14">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="14"/>
+                <ColumnDefinition Width="280"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Left: daily hours bar chart -->
+            <Border Grid.Column="0" Style="{StaticResource Card}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="DAILY HOURS"
+                               Style="{StaticResource FieldLabel}" Margin="0,0,0,12"/>
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Disabled">
+                        <Canvas x:Name="DailyChart" Height="280"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Right: project breakdown -->
+            <Border Grid.Column="2" Style="{StaticResource Card}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                            <Border x:Name="BtnPie" CornerRadius="3" Padding="7,3" Cursor="Hand"
+                                    Background="{StaticResource AccentBrush}"
+                                    MouseLeftButtonUp="BtnPie_Click" Margin="0,0,4,0">
+                                <TextBlock Text="Pie" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                            </Border>
+                            <Border x:Name="BtnBar" CornerRadius="3" Padding="7,3" Cursor="Hand"
+                                    Background="{StaticResource SubtleBgBrush}"
+                                    MouseLeftButtonUp="BtnBar_Click">
+                                <TextBlock Text="Bar" FontSize="11" FontWeight="SemiBold"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="BY PROJECT" Style="{StaticResource FieldLabel}"
+                                   VerticalAlignment="Center"/>
+                    </DockPanel>
+                    <!-- Breadcrumb (visible only when drilled in) -->
+                    <Border DockPanel.Dock="Top" x:Name="DrillBreadcrumb"
+                            Visibility="Collapsed" Margin="0,0,0,10">
+                        <StackPanel Orientation="Horizontal">
+                            <Border CornerRadius="3" Padding="7,3" Cursor="Hand"
+                                    Background="{StaticResource SubtleBgBrush}"
+                                    MouseLeftButtonUp="DrillBack_Click">
+                                <TextBlock Text="← All Projects" FontSize="11"
+                                           Foreground="{StaticResource AccentBrush}"
+                                           FontWeight="SemiBold"/>
+                            </Border>
+                            <TextBlock x:Name="DrillTitle" FontSize="11" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                       VerticalAlignment="Center" Margin="8,0,0,0"/>
+                        </StackPanel>
+                    </Border>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <Canvas x:Name="ProjectChart" MinHeight="200"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+        </Grid>
+
+    </DockPanel>
+</Window>

@@ -232,6 +232,14 @@
             </Setter>
         </Style>
 
+        <!-- Nav button — active state set in code-behind via BorderThickness/Background -->
+        <Style x:Key="BtnNav" BasedOn="{StaticResource BtnHeaderOutline}" TargetType="Button">
+            <Setter Property="Padding"          Value="12,6"/>
+            <Setter Property="FontSize"         Value="13"/>
+            <Setter Property="BorderThickness"  Value="0,0,0,2"/>
+            <Setter Property="BorderBrush"      Value="Transparent"/>
+        </Style>
+
         <!-- ── Card ──────────────────────────────────────────────────── -->
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background"      Value="{StaticResource CardBgBrush}"/>

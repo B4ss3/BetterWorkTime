@@ -824,10 +824,10 @@ public partial class App : Application
         open.Click += (_, __) => Dispatcher.Invoke(ShowMainWindow);
 
         var reports = new MenuItem { Header = "Reports…" };
-        reports.Click += (_, __) => Dispatcher.Invoke(OpenReports);
+        reports.Click += (_, __) => Dispatcher.Invoke(() => Navigate("Reports"));
 
         var settings = new MenuItem { Header = "Settings…" };
-        settings.Click += (_, __) => OpenSettings();
+        settings.Click += (_, __) => Dispatcher.Invoke(() => Navigate("Settings"));
 
         var quit = new MenuItem { Header = "Quit" };
         quit.Click += (_, __) => QuitApp();
@@ -900,6 +900,13 @@ public partial class App : Application
             UpdateRunningNote(dlg.Note);
     }
 
+    internal void Navigate(string view)
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(() => Navigate(view)); return; }
+        ShowMainWindow();
+        ((MainWindow)MainWindow!).Navigate(view);
+    }
+
     internal void BringToFront() => ShowMainWindow();
 
     private void ToggleMainWindow()
@@ -921,6 +928,21 @@ public partial class App : Application
         MainWindow.Topmost = true;
         MainWindow.Topmost = false;
         MainWindow.Focus();
+    }
+
+    internal void ShowTimerWindow()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(ShowTimerWindow); return; }
+        ShowMainWindow();
+    }
+
+    internal void OpenDashboard()
+    {
+        if (!Dispatcher.CheckAccess()) { Dispatcher.Invoke(OpenDashboard); return; }
+
+        var dash = new DashboardWindow(_dbPath!);
+        dash.Show();
+        MainWindow?.Hide();
     }
 
     private void QuitApp()
