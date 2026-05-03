@@ -13,17 +13,16 @@ if (!File.Exists(dbPath))
 }
 
 Console.WriteLine($"Seeding: {dbPath}");
-
 DbInitializer.EnsureCreated(dbPath);
 
 var cs = new SqliteConnectionStringBuilder
 {
     DataSource = dbPath,
-    Mode = SqliteOpenMode.ReadWriteCreate,
-    Cache = SqliteCacheMode.Shared
+    Mode       = SqliteOpenMode.ReadWriteCreate,
+    Cache      = SqliteCacheMode.Shared
 }.ToString();
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
 string NewId() => Guid.NewGuid().ToString("N");
 
@@ -50,7 +49,7 @@ void Exec(string sql, Action<SqliteCommand>? bind = null)
     cmd.ExecuteNonQuery();
 }
 
-// ── Projects ─────────────────────────────────────────────────────────────────
+// ── Projects ──────────────────────────────────────────────────────────────────
 
 string EnsureProject(string name, string color)
 {
@@ -59,23 +58,26 @@ string EnsureProject(string name, string color)
         c => c.Parameters.AddWithValue("$n", name));
     if (existing != null) return existing;
 
-    var id = NewId();
+    var id  = NewId();
     var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     Exec("INSERT INTO projects(id, name, color, archived, created_at_utc) VALUES ($id,$n,$c,0,$t);", c =>
     {
         c.Parameters.AddWithValue("$id", id);
-        c.Parameters.AddWithValue("$n", name);
-        c.Parameters.AddWithValue("$c", color);
-        c.Parameters.AddWithValue("$t", now);
+        c.Parameters.AddWithValue("$n",  name);
+        c.Parameters.AddWithValue("$c",  color);
+        c.Parameters.AddWithValue("$t",  now);
     });
     Console.WriteLine($"  + Project: {name}");
     return id;
 }
 
-var pFrontend  = EnsureProject("Frontend",    "#4A7FA5");
-var pBackend   = EnsureProject("Backend",     "#3D8B5E");
-var pDevOps    = EnsureProject("DevOps",      "#A84040");
-var pCodeRev   = EnsureProject("Code Review", "#6B5B9E");
+var pFrontend = EnsureProject("Frontend",      "#4A7FA5");
+var pBackend  = EnsureProject("Backend",       "#3D8B5E");
+var pDevOps   = EnsureProject("DevOps",        "#A84040");
+var pCodeRev  = EnsureProject("Code Review",   "#6B5B9E");
+var pPlanning = EnsureProject("Planning",      "#D4882A");
+var pDocs     = EnsureProject("Documentation", "#2A8FAA");
+var pQA       = EnsureProject("QA / Testing",  "#7A6E3E");
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
 
@@ -86,32 +88,60 @@ string EnsureTask(string name, string projectId)
         c => { c.Parameters.AddWithValue("$n", name); c.Parameters.AddWithValue("$p", projectId); });
     if (existing != null) return existing;
 
-    var id = NewId();
+    var id  = NewId();
     var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     Exec("INSERT INTO tasks(id, name, project_id, archived, created_at_utc) VALUES ($id,$n,$p,0,$t);", c =>
     {
         c.Parameters.AddWithValue("$id", id);
-        c.Parameters.AddWithValue("$n", name);
-        c.Parameters.AddWithValue("$p", projectId);
-        c.Parameters.AddWithValue("$t", now);
+        c.Parameters.AddWithValue("$n",  name);
+        c.Parameters.AddWithValue("$p",  projectId);
+        c.Parameters.AddWithValue("$t",  now);
     });
     return id;
 }
 
-var tDashboard     = EnsureTask("Dashboard redesign",      pFrontend);
-var tBugfix        = EnsureTask("Bug fixes",               pFrontend);
-var tApiEndpoints  = EnsureTask("REST API endpoints",      pBackend);
-var tDbMigration   = EnsureTask("DB migrations",           pBackend);
-var tAuthService   = EnsureTask("Auth service",            pBackend);
-var tCiPipeline    = EnsureTask("CI pipeline",             pDevOps);
-var tDockerize     = EnsureTask("Dockerize services",      pDevOps);
-var tPrReviews     = EnsureTask("PR reviews",              pCodeRev);
-var tDesignReview  = EnsureTask("Design review",           pCodeRev);
+// Frontend
+var tUI        = EnsureTask("UI component library",        pFrontend);
+var tDashboard = EnsureTask("Dashboard redesign",          pFrontend);
+var tBugfix    = EnsureTask("Bug fixes",                   pFrontend);
+var tA11y      = EnsureTask("Accessibility improvements",  pFrontend);
+var tPerf      = EnsureTask("Performance optimisation",    pFrontend);
 
-// ── Time entry insertion ──────────────────────────────────────────────────────
+// Backend
+var tApiV2     = EnsureTask("API v2 endpoints",            pBackend);
+var tAuth      = EnsureTask("Auth service",                pBackend);
+var tDbMig     = EnsureTask("DB migrations",               pBackend);
+var tCaching   = EnsureTask("Redis caching layer",         pBackend);
+var tWebhooks  = EnsureTask("Webhook system",              pBackend);
 
-void AddEntry(DateTime start, DateTime end, string projectId, string taskId,
-              string note, bool isIdle = false, string source = "manual")
+// DevOps
+var tCI        = EnsureTask("CI pipeline",                 pDevOps);
+var tDocker    = EnsureTask("Dockerize services",          pDevOps);
+var tK8s       = EnsureTask("Kubernetes manifests",        pDevOps);
+var tMonitor   = EnsureTask("Monitoring & alerts",         pDevOps);
+
+// Code Review
+var tPRs       = EnsureTask("PR reviews",                  pCodeRev);
+var tDesign    = EnsureTask("Design review",               pCodeRev);
+
+// Planning
+var tSprint    = EnsureTask("Sprint planning",             pPlanning);
+var tRetro     = EnsureTask("Retrospective",               pPlanning);
+var tRoadmap   = EnsureTask("Roadmap grooming",            pPlanning);
+
+// Documentation
+var tApiDocs   = EnsureTask("API reference docs",          pDocs);
+var tRunbooks  = EnsureTask("Runbooks",                    pDocs);
+var tChangelog = EnsureTask("Changelog & release notes",   pDocs);
+
+// QA / Testing
+var tE2E       = EnsureTask("End-to-end tests",            pQA);
+var tLoadTest  = EnsureTask("Load testing",                pQA);
+var tBugTriage = EnsureTask("Bug triage",                  pQA);
+
+// ── Entry helpers ─────────────────────────────────────────────────────────────
+
+void AddEntry(DateTime start, DateTime end, string projectId, string taskId, string note)
 {
     var id  = NewId();
     var s   = ToUtc(start);
@@ -120,7 +150,7 @@ void AddEntry(DateTime start, DateTime end, string projectId, string taskId,
     Exec("""
 INSERT INTO time_entries(id, start_utc, end_utc, duration_sec, project_id, task_id,
                           note, is_idle, source, created_at_utc)
-VALUES ($id,$s,$e,$dur,$p,$t,$n,$i,$src,$now);
+VALUES ($id,$s,$e,$dur,$p,$t,$n,0,'manual',$s);
 """, c =>
     {
         c.Parameters.AddWithValue("$id",  id);
@@ -128,11 +158,8 @@ VALUES ($id,$s,$e,$dur,$p,$t,$n,$i,$src,$now);
         c.Parameters.AddWithValue("$e",   e);
         c.Parameters.AddWithValue("$dur", dur);
         c.Parameters.AddWithValue("$p",   (object?)projectId ?? DBNull.Value);
-        c.Parameters.AddWithValue("$t",   (object?)taskId ?? DBNull.Value);
-        c.Parameters.AddWithValue("$n",   (object?)note ?? DBNull.Value);
-        c.Parameters.AddWithValue("$i",   isIdle ? 1 : 0);
-        c.Parameters.AddWithValue("$src", source);
-        c.Parameters.AddWithValue("$now", s);
+        c.Parameters.AddWithValue("$t",   (object?)taskId    ?? DBNull.Value);
+        c.Parameters.AddWithValue("$n",   (object?)note      ?? DBNull.Value);
     });
 }
 
@@ -154,92 +181,169 @@ VALUES ($id,$s,$e,$dur,NULL,NULL,'Pause',1,'pause',$s);
         c.Parameters.AddWithValue("$dur", dur);
     });
 
-    // Attach system pause tag
-    var pauseTagId = SystemTags.PauseId;
-    Exec("INSERT OR IGNORE INTO time_entry_tags(time_entry_id, tag_id) VALUES ($eid, $tid);", c =>
+    Exec("INSERT OR IGNORE INTO time_entry_tags(time_entry_id, tag_id) VALUES ($eid,$tid);", c =>
     {
         c.Parameters.AddWithValue("$eid", id);
-        c.Parameters.AddWithValue("$tid", pauseTagId);
+        c.Parameters.AddWithValue("$tid", SystemTags.PauseId);
     });
 }
 
-// ── Seed 5 days (Mon–Fri this week) ──────────────────────────────────────────
+// ── Schedule templates ────────────────────────────────────────────────────────
+// Each slot: (startOffsetMinutes, durationMinutes, proj?, task?, note)
+// proj==null → pause
 
-// Find Monday of the current week
-var today  = DateTime.Today;
-var monday = today.AddDays(-(int)today.DayOfWeek + (int)DayOfWeek.Monday);
-if (today.DayOfWeek == DayOfWeek.Sunday) monday = monday.AddDays(-7);
+(int S, int D, string? P, string? T, string N) Work(int s, int d, string p, string t, string n)
+    => (s, d, p, t, n);
 
-Console.WriteLine($"\nSeeding week starting {monday:yyyy-MM-dd}");
+(int S, int D, string? P, string? T, string N) Pause(int s, int d)
+    => (s, d, null, null, "Pause");
 
-for (int d = 0; d < 5; d++)
+var templates = new List<List<(int S, int D, string? P, string? T, string N)>>
 {
-    var day = monday.AddDays(d);
-    if (day > today) { Console.WriteLine($"  Skipping {day:ddd MM-dd} (future)"); continue; }
-
-    Console.WriteLine($"  Seeding {day:ddd MM-dd}...");
-
-    DateTime T(int h, int m = 0) => day.Date.AddHours(h).AddMinutes(m);
-
-    switch (d)
+    // 0 — Backend heavy
+    new List<(int,int,string?,string?,string)>
     {
-        case 0: // Monday
-            AddEntry(T(9, 0),  T(10,30), pFrontend, tDashboard,    "Implement new header component");
-            AddPause( T(10,30), T(10,45));
-            AddEntry(T(10,45), T(12,15), pFrontend, tDashboard,    "Wire up chart data binding");
-            AddPause( T(12,15), T(13, 0));  // lunch
-            AddEntry(T(13, 0), T(14,30), pBackend,  tApiEndpoints, "Add /reports endpoint");
-            AddEntry(T(14,30), T(15,45), pBackend,  tApiEndpoints, "Write OpenAPI docs");
-            AddPause( T(15,45), T(16, 0));
-            AddEntry(T(16, 0), T(17, 0), pCodeRev,  tPrReviews,   "Review auth service PR #42");
-            break;
+        Work(  0,  90, pBackend,  tApiV2,    "Design REST resource hierarchy"),
+        Pause( 90,  15),
+        Work(105,  75, pBackend,  tApiV2,    "Implement GET /users and /projects"),
+        Pause(180,  45),
+        Work(225,  60, pBackend,  tDbMig,    "Add indexes for query performance"),
+        Work(285,  60, pCodeRev,  tPRs,      "Review backend API PRs"),
+        Pause(345,  15),
+        Work(360,  60, pDocs,     tApiDocs,  "Document new v2 endpoints"),
+    },
+    // 1 — Frontend heavy
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  60, pFrontend, tUI,       "Build reusable Button component"),
+        Work( 60,  90, pFrontend, tUI,       "Build Modal and Toast components"),
+        Pause(150,  15),
+        Work(165,  45, pFrontend, tBugfix,   "Fix z-index stacking context bug"),
+        Pause(210,  45),
+        Work(255,  90, pFrontend, tDashboard,"Wire up project breakdown chart"),
+        Pause(345,  15),
+        Work(360,  60, pCodeRev,  tDesign,   "Design review: new settings layout"),
+    },
+    // 2 — DevOps + Planning
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  60, pPlanning, tSprint,   "Sprint planning — estimate tickets"),
+        Work( 60,  30, pPlanning, tRoadmap,  "Update Q2 roadmap milestones"),
+        Pause( 90,  15),
+        Work(105,  75, pDevOps,   tCI,       "Add parallel test jobs to pipeline"),
+        Pause(180,  45),
+        Work(225,  90, pDevOps,   tDocker,   "Multi-stage Dockerfile for API"),
+        Pause(315,  15),
+        Work(330,  90, pDevOps,   tK8s,      "Write Helm chart for staging deploy"),
+    },
+    // 3 — QA + Backend
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  90, pQA,       tE2E,      "Write Playwright tests for auth flow"),
+        Pause( 90,  15),
+        Work(105,  75, pQA,       tE2E,      "Write tests for dashboard filters"),
+        Pause(180,  45),
+        Work(225,  60, pBackend,  tCaching,  "Add Redis cache for session tokens"),
+        Work(285,  60, pBackend,  tCaching,  "Cache invalidation on user update"),
+        Pause(345,  15),
+        Work(360,  60, pQA,       tBugTriage,"Triage 8 open bug reports"),
+    },
+    // 4 — Docs + Code Review
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  60, pDocs,     tApiDocs,  "Write pagination API reference"),
+        Work( 60,  60, pDocs,     tRunbooks, "Document deployment runbook"),
+        Pause(120,  15),
+        Work(135,  45, pCodeRev,  tPRs,      "Review 4 small cleanup PRs"),
+        Pause(180,  45),
+        Work(225,  90, pFrontend, tA11y,     "Add ARIA labels to form controls"),
+        Pause(315,  15),
+        Work(330,  60, pFrontend, tA11y,     "Keyboard navigation for dropdowns"),
+        Work(390,  30, pDocs,     tChangelog,"Write release notes"),
+    },
+    // 5 — Auth + Performance
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  90, pBackend,  tAuth,     "OAuth2 Google provider integration"),
+        Pause( 90,  15),
+        Work(105,  75, pBackend,  tAuth,     "Write integration tests for OAuth"),
+        Pause(180,  45),
+        Work(225,  60, pFrontend, tPerf,     "Lazy-load route bundles"),
+        Work(285,  60, pFrontend, tPerf,     "Reduce re-renders with useMemo"),
+        Pause(345,  15),
+        Work(360,  60, pDevOps,   tMonitor,  "Set up Grafana dashboard for API p95"),
+    },
+    // 6 — Sprint events + Webhooks
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  30, pPlanning, tRetro,    "Sprint retrospective"),
+        Work( 30,  30, pPlanning, tSprint,   "Next sprint backlog refinement"),
+        Pause( 60,  15),
+        Work( 75,  75, pBackend,  tWebhooks, "Design webhook event schema"),
+        Pause(150,  45),
+        Work(195,  90, pBackend,  tWebhooks, "Implement webhook delivery with retry"),
+        Pause(285,  15),
+        Work(300,  60, pQA,       tLoadTest, "k6 load test on /events endpoint"),
+        Work(360,  60, pCodeRev,  tPRs,      "Review webhook implementation PR"),
+    },
+    // 7 — Infra + Docs light day
+    new List<(int,int,string?,string?,string)>
+    {
+        Work(  0,  90, pDevOps,   tMonitor,  "Alert rules for error rate spikes"),
+        Pause( 90,  15),
+        Work(105,  45, pDevOps,   tMonitor,  "PagerDuty integration & on-call rota"),
+        Pause(150,  45),
+        Work(195,  60, pDocs,     tRunbooks, "Incident response runbook"),
+        Work(255,  60, pBackend,  tApiV2,    "Rate limiting middleware"),
+        Pause(315,  15),
+        Work(330,  60, pFrontend, tDashboard,"Add date range picker to dashboard"),
+        Work(390,  30, pCodeRev,  tDesign,   "Quick design review: mobile nav"),
+    },
+};
 
-        case 1: // Tuesday
-            AddEntry(T(9, 0),  T(10, 0), pBackend,  tAuthService,  "JWT refresh token logic");
-            AddEntry(T(10, 0), T(11,30), pBackend,  tAuthService,  "Unit tests for token expiry");
-            AddPause( T(11,30), T(11,45));
-            AddEntry(T(11,45), T(12,30), pDevOps,   tCiPipeline,  "Fix flaky integration test step");
-            AddPause( T(12,30), T(13,15));  // lunch
-            AddEntry(T(13,15), T(15, 0), pBackend,  tDbMigration, "Add user_roles table migration");
-            AddEntry(T(15, 0), T(16, 0), pFrontend, tBugfix,       "Fix dropdown z-index on Safari");
-            AddPause( T(16, 0), T(16,15));
-            AddEntry(T(16,15), T(17, 0), pCodeRev,  tPrReviews,   "Review backend migration PR #43");
-            break;
+// ── Seed last 30 calendar days (weekdays only) ────────────────────────────────
 
-        case 2: // Wednesday
-            AddEntry(T(9, 0),  T(11, 0), pDevOps,   tDockerize,   "Write Dockerfile for API service");
-            AddPause( T(11, 0), T(11,15));
-            AddEntry(T(11,15), T(12,30), pDevOps,   tDockerize,   "Docker Compose multi-service setup");
-            AddPause( T(12,30), T(13,30));  // lunch
-            AddEntry(T(13,30), T(14,30), pFrontend, tDashboard,   "Responsive breakpoints");
-            AddEntry(T(14,30), T(15,30), pFrontend, tDashboard,   "Dark mode CSS variables");
-            AddPause( T(15,30), T(15,45));
-            AddEntry(T(15,45), T(16,30), pCodeRev,  tDesignReview,"Design review: new onboarding flow");
-            AddEntry(T(16,30), T(17, 0), pCodeRev,  tPrReviews,   "Review devops PR #44");
-            break;
+var today = DateTime.Today;
+var seed  = 0;
 
-        case 3: // Thursday
-            AddEntry(T(9, 0),  T(10,30), pBackend,  tApiEndpoints,"Pagination support on list endpoints");
-            AddPause( T(10,30), T(10,45));
-            AddEntry(T(10,45), T(12, 0), pBackend,  tApiEndpoints,"Add cursor-based pagination tests");
-            AddPause( T(12, 0), T(13, 0));  // lunch
-            AddEntry(T(13, 0), T(14,15), pFrontend, tBugfix,      "Fix memory leak in useEffect cleanup");
-            AddEntry(T(14,15), T(15,30), pFrontend, tDashboard,   "E2E tests for dashboard filters");
-            AddPause( T(15,30), T(15,50));
-            AddEntry(T(15,50), T(17, 0), pDevOps,   tCiPipeline,  "Add deploy-to-staging stage");
-            break;
+Console.WriteLine($"\nSeeding last 30 days up to {today:yyyy-MM-dd}");
 
-        case 4: // Friday
-            AddEntry(T(9, 0),  T(10, 0), pCodeRev,  tPrReviews,   "Review 3 small cleanup PRs");
-            AddEntry(T(10, 0), T(11,15), pBackend,  tAuthService, "OAuth2 provider integration");
-            AddPause( T(11,15), T(11,30));
-            AddEntry(T(11,30), T(12,30), pBackend,  tAuthService, "Write integration tests for OAuth");
-            AddPause( T(12,30), T(13,15));  // lunch
-            AddEntry(T(13,15), T(14,30), pFrontend, tDashboard,   "Polish animations and transitions");
-            AddEntry(T(14,30), T(15,30), pDevOps,   tDockerize,   "Kubernetes deployment manifests");
-            AddPause( T(15,30), T(15,45));
-            AddEntry(T(15,45), T(17, 0), pCodeRev,  tDesignReview,"Final review: weekly sprint wrap-up");
-            break;
+for (int daysBack = 29; daysBack >= 1; daysBack--)
+{
+    var day = today.AddDays(-daysBack);
+
+    if (day.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday)
+        continue;
+
+    var dayStart = ToUtc(day.Date);
+    var dayEnd   = ToUtc(day.Date.AddDays(1));
+    var existing = Scalar<long>(
+        "SELECT COUNT(*) FROM time_entries WHERE start_utc >= $s AND start_utc < $e;",
+        c => { c.Parameters.AddWithValue("$s", dayStart); c.Parameters.AddWithValue("$e", dayEnd); });
+
+    if (existing > 0)
+    {
+        Console.WriteLine($"  Skipping {day:ddd yyyy-MM-dd} (already has {existing} entries)");
+        seed++;
+        continue;
+    }
+
+    var template = templates[seed % templates.Count];
+    seed++;
+
+    Console.WriteLine($"  Seeding  {day:ddd yyyy-MM-dd}  (template {(seed - 1) % templates.Count})");
+
+    var anchor = day.Date.AddHours(9); // workday starts at 09:00
+
+    foreach (var slot in template)
+    {
+        var s = anchor.AddMinutes(slot.S);
+        var e = s.AddMinutes(slot.D);
+
+        if (slot.P == null)
+            AddPause(s, e);
+        else
+            AddEntry(s, e, slot.P, slot.T!, slot.N);
     }
 }
 
