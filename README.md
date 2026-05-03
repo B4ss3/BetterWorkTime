@@ -1,16 +1,36 @@
-# BetterWorkTime
+# Tuntio
 
-Tray-first Windows time tracking app for logging work time by **Project / Task / Tags**, with idle handling, reports, and CSV export. Optional hydration reminders trigger only while tracking is running.
+A personal Windows time tracker I built to learn C# and WPF, and to actually use every day.
 
-## Specs (source of truth)
-- **v1.0 Spec Snapshot:** `docs/BetterWorkTime_v1.0_SPEC.md`
-- **Primary evolving spec:** `docs/planning_WORKING.md`
-- **Reference/constants:** `docs/reference_WORKING.md`
-- **Definitions:** `docs/definitions_WORKING.md`
-- **Canonical index:** `docs/canonicalIndex_WORKING.md`
+Tuntio (Finnish for *hour*) lives in your system tray and gets out of your way. Start a timer, pick a project, optionally add a task and tags, and stop when you're done. That's the core loop. The rest (reports, charts, idle detection, hydration reminders) is there when you need it.
 
-## Tech stack (planned)
-- WPF + .NET + SQLite (tray-first MVP)
+I use it for tracking study sessions, side project work, and anything else I want to know where my time goes. If you find it useful too, great.
 
-## Status
-Planning complete for v1.0. Implementation milestones: M0–M5 (see spec).
+## Features
+
+- **Tray-first** - runs quietly in the background, one click to open
+- **Projects, Tasks & Tags** - organise your time however makes sense to you
+- **Idle detection** - notices when you walk away and asks what to do with the gap
+- **Pause tracking** - log breaks without stopping your session
+- **Reports & CSV export** - see where your time went, filter by date or project, export to spreadsheet
+- **Dashboard** - daily bar chart and project breakdown with drill-down into tasks
+- **Hydration reminders** - optional water break nudges, only fires while you're actively tracking
+- **Global hotkeys** - start/stop without opening the app
+- **Auto-updates** - silently downloads updates in the background
+
+## Installation
+
+Download `TuntioSetup.exe` from the [Releases](https://github.com/B4ss3/Tuntio/releases) page and run it. That's it.
+
+Updates are delivered automatically, when a new version is ready you'll get a prompt to restart.
+
+## Tech stack
+
+- C# / WPF / .NET 10
+- SQLite (all data stays local on your machine, nothing goes to the cloud)
+- Velopack for auto-updates
+- GitHub Actions for CI and releases
+
+## Project status
+
+This is a personal learning project. It works and I use it daily, but it's not a polished commercial product. Expect rough edges. Issues and feedback welcome.
