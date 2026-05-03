@@ -48,6 +48,7 @@ jobs:
           --packId Tuntio
           --packVersion ${{ steps.version.outputs.VERSION }}
           --packDir publish/
+          --mainExe BetterWorkTime.App.exe
           --icon BetterWorkTime.App/spedometer.ico
           --packTitle "Tuntio"
 
