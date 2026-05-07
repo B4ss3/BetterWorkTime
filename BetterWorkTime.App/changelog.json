@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.0.1",
+    "date": "2026-05-07",
+    "changes": [
+      { "type": "fixed",   "text": "Idle detection no longer triggers while tracking is paused" },
+      { "type": "added",   "text": "Feedback link in Help window — opens a GitHub issue directly" }
+    ]
+  },
+  {
     "version": "1.0.0",
     "date": "2026-05-03",
     "changes": [
