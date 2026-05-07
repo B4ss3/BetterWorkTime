@@ -56,9 +56,16 @@
                 Background="{StaticResource SubtleBgBrush}"
                 BorderBrush="{StaticResource BorderBrush}"
                 BorderThickness="0,1,0,0" Padding="14,10">
-            <Button Content="Close" Width="84" HorizontalAlignment="Right"
-                    IsCancel="True" Click="Close_Click"
-                    Style="{StaticResource BtnOutline}" Padding="0,6"/>
+            <Grid>
+                <TextBlock VerticalAlignment="Center" HorizontalAlignment="Left">
+                    <Hyperlink NavigateUri="https://github.com/B4ss3/Tuntio/issues/new" RequestNavigate="Feedback_Click">
+                        Found a bug or have a suggestion? Open an issue on GitHub
+                    </Hyperlink>
+                </TextBlock>
+                <Button Content="Close" Width="84" HorizontalAlignment="Right"
+                        IsCancel="True" Click="Close_Click"
+                        Style="{StaticResource BtnOutline}" Padding="0,6"/>
+            </Grid>
         </Border>
 
         <TabControl x:Name="Tabs">

@@ -242,7 +242,7 @@ public partial class App : Application
     {
         TickHydration();
 
-        if (!_isTracking || _idlePromptShowing) return;
+        if (!_isTracking || _isPaused || _idlePromptShowing) return;
 
         var idleSec = IdleDetector.GetIdleSeconds();
         if (idleSec < IdleThresholdSeconds) return;

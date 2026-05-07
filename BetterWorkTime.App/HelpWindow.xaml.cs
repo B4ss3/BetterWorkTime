@@ -1,9 +1,11 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Navigation;
 
 namespace BetterWorkTime.App;
 
@@ -18,6 +20,12 @@ public partial class HelpWindow : Window
     public void ShowWhatsNew() => Tabs.SelectedItem = WhatsNewTab;
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void Feedback_Click(object sender, RequestNavigateEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri) { UseShellExecute = true });
+        e.Handled = true;
+    }
 
     // ── Changelog rendering ───────────────────────────────────────────────
 
